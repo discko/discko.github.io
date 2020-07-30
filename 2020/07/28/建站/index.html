@@ -20,16 +20,18 @@
     var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="写在前面最终还是提出了离职，在准备交接的过程中，整理了不少之前的代码和文档，为了对过去的成果进行总结和记录以供未来查阅，同时也为了让自己对技术积累过程有一个回顾的机会，决定建设一个小日记本（其实已经想做很多年了）。当然了，本站绝不会涉及所在公司的核心业务代码和保密技术，仅用于记录自己的想法和试验性质的尝试。同时，由于我也在刷LeetCode，也会将一些题目的解题心得记录在此。 本篇最主要的目的，是">
+  <meta name="description" content="本篇最主要的目的，是记录一下使用Hexo在GitHub Pages上建立个人站的过程。整个建站过程，包括对一些基础功能的熟悉，大约历时2小时。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="建站">
 <meta property="og:url" content="http://yoursite.com/2020/07/28/%E5%BB%BA%E7%AB%99/index.html">
 <meta property="og:site_name" content="吴迪小站">
-<meta property="og:description" content="写在前面最终还是提出了离职，在准备交接的过程中，整理了不少之前的代码和文档，为了对过去的成果进行总结和记录以供未来查阅，同时也为了让自己对技术积累过程有一个回顾的机会，决定建设一个小日记本（其实已经想做很多年了）。当然了，本站绝不会涉及所在公司的核心业务代码和保密技术，仅用于记录自己的想法和试验性质的尝试。同时，由于我也在刷LeetCode，也会将一些题目的解题心得记录在此。 本篇最主要的目的，是">
+<meta property="og:description" content="本篇最主要的目的，是记录一下使用Hexo在GitHub Pages上建立个人站的过程。整个建站过程，包括对一些基础功能的熟悉，大约历时2小时。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://yoursite.com/2020/07/28/%E5%BB%BA%E7%AB%99/TestInstallResult.gif">
+<meta property="og:image" content="http://yoursite.com/2020/07/28/%E5%BB%BA%E7%AB%99/TagsAndCategoriesHomePath.gif">
+<meta property="og:image" content="http://yoursite.com/2020/07/28/%E5%BB%BA%E7%AB%99/MultiCategories.png">
 <meta property="article:published_time" content="2020-07-28T06:57:53.000Z">
-<meta property="article:modified_time" content="2020-07-29T11:39:29.083Z">
+<meta property="article:modified_time" content="2020-07-30T03:57:45.849Z">
 <meta property="article:author" content="吴迪">
 <meta property="article:tag" content="建站">
 <meta property="article:tag" content="hexo">
@@ -194,7 +196,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-07-29 19:39:29" itemprop="dateModified" datetime="2020-07-29T19:39:29+08:00">2020-07-29</time>
+                <time title="修改时间：2020-07-30 11:57:45" itemprop="dateModified" datetime="2020-07-30T11:57:45+08:00">2020-07-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -217,11 +219,12 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="写在前面"><a href="#写在前面" class="headerlink" title="写在前面"></a>写在前面</h1><p>最终还是提出了离职，在准备交接的过程中，整理了不少之前的代码和文档，为了对过去的成果进行总结和记录以供未来查阅，同时也为了让自己对技术积累过程有一个回顾的机会，决定建设一个小日记本（其实已经想做很多年了）。<br>当然了，本站绝不会涉及所在公司的核心业务代码和保密技术，仅用于记录自己的想法和试验性质的尝试。<br>同时，由于我也在刷LeetCode，也会将一些题目的解题心得记录在此。</p>
-<p>本篇最主要的目的，是记录一下使用Hexo在GitHub Pages上建立个人站的过程。整个建站过程，包括对一些基础功能的熟悉，大约历时2小时。</p>
-<h1 id="感谢"><a href="#感谢" class="headerlink" title="感谢"></a>感谢</h1><p>在建站过程中，我主要参考了以下三位的博文，在此表示感谢。</p>
+        <p>本篇最主要的目的，是记录一下使用Hexo在GitHub Pages上建立个人站的过程。整个建站过程，包括对一些基础功能的熟悉，大约历时2小时。</p>
+<a id="more"></a>
+<h1 id="写在前面"><a href="#写在前面" class="headerlink" title="写在前面"></a>写在前面</h1><p>最终还是提出了离职，在准备交接的过程中，整理了不少之前的代码和文档，为了对过去的成果进行总结和记录以供未来查阅，同时也为了让自己对技术积累过程有一个回顾的机会，决定建设一个小日记本（其实已经想做很多年了）。<br>当然了，本站绝不会涉及所在公司的核心业务代码和保密技术，仅用于记录自己的想法和试验性质的尝试。<br>同时，由于我也在刷LeetCode，也会将一些题目的解题心得记录在此。</p>
+<h1 id="感谢"><a href="#感谢" class="headerlink" title="感谢"></a>感谢</h1><p>在建站过程中，我主要参考了以下几位的博文，在此表示感谢。</p>
 <blockquote>
-<p>wind-liang：<a href="https://windliang.wang/2017/01/23/建立博客系列（三）：hexo安装配置/" target="_blank" rel="noopener">建立博客系列（三）：hexo安装配置</a><br>萧然似我：<a href="https://blog.csdn.net/qq_22833925/article/details/51469518" target="_blank" rel="noopener">jekyll博客搭建及其可能出现的问题（1）</a><br>seporga：<a href="https://www.jianshu.com/p/e17711e44e00" target="_blank" rel="noopener">Hexo使用攻略-添加分类及标签</a></p>
+<p>wind-liang：<a href="https://windliang.wang/2017/01/23/建立博客系列（三）：hexo安装配置/" target="_blank" rel="noopener">建立博客系列（三）：hexo安装配置</a><br>seporga：<a href="https://www.jianshu.com/p/e17711e44e00" target="_blank" rel="noopener">Hexo使用攻略-添加分类及标签</a><br>大专栏：<a href="https://www.dazhuanlan.com/2019/12/18/5df99e24d6d27/" target="_blank" rel="noopener">Hexo 无法加载图片（路径问题）</a></p>
 </blockquote>
 <h1 id="本文环境"><a href="#本文环境" class="headerlink" title="本文环境"></a>本文环境</h1><p>系统： macOS Catalina （10.15.5）<br>配置： 3.1 GHz 4 core Intel i7， 内存 16GiB<br>开发环境：</p>
 <ul>
@@ -236,12 +239,53 @@
 <li><p>安装Node.js<br><a href="https://hexo.io/zh-cn/" target="_blank" rel="noopener">Hexo</a>是一个基于Node.js的快速建站工具。因此首先需要安装Node.js。<br>可以<a href="http://nodejs.cn/download/" target="_blank" rel="noopener">在此</a>下载和安装Node.js，并使用<code>node -v</code>确认安装和环境配置情况。</p>
 </li>
 <li><p>安装Hexo<br>在vscode中，打开一个根目录（本文以<del>/program为根目录），使用`ctrl+</del>`唤出terminal，使用npm命令安装hexo-cli、初始化一个文件夹blog用于存放hexo工程，并进入该文件夹：  </p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">npm i hexo-cli -g</span><br><span class="line">hexo init blog</span><br><span class="line">cd blog</span><br></pre></td></tr></table></figure>
-<p>安装慢的话，可以将npm源切换至<a href="https://registry.npm.taobao.org，或使用cnpm执行install动作。在此不再赘述。`hexo" target="_blank" rel="noopener">https://registry.npm.taobao.org，或使用cnpm执行install动作。在此不再赘述。`hexo</a> init`的过程中，如果速度过慢，可以科学上网以解决该问题。<br>安装完成后，使用以下命令启动本地hexo服务，并尝试打开输出结果中提示的localhost网址（本例中为<a href="http://localhost:4000)：">http://localhost:4000)：</a></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo serve</span><br></pre></td></tr></table></figure>
-<p>在浏览器地址栏中输入<a href="http://localhost:4000，若可见hexo的hello">http://localhost:4000，若可见hexo的hello</a> world，则说明前面的步骤没有什么问题了。<br><img src="/2020/07/28/%E5%BB%BA%E7%AB%99/TestInstallResult.gif" alt="测试安装结果"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">npm i hexo-cli -g</span><br><span class="line">hexo init blog</span><br><span class="line"><span class="built_in">cd</span> blog</span><br></pre></td></tr></table></figure>
+<p>安装慢的话，可以将npm源切换至<code>https://registry.npm.taobao.org</code>，或使用cnpm执行install动作。在此不再赘述。<code>hexo init</code>的过程中，如果速度过慢，可以科学上网以解决该问题。<br>安装完成后，使用以下命令启动本地hexo服务，并尝试打开输出结果中提示的localhost网址（本例中为<code>http://localhost:4000</code>)：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo serve</span><br></pre></td></tr></table></figure>
+<p>在浏览器地址栏中输入<a href="http://localhost:4000" target="_blank" rel="noopener">http://localhost:4000</a>，若可见hexo的hello world，则说明前面的步骤没有什么问题了。<br><img src="/2020/07/28/%E5%BB%BA%E7%AB%99/TestInstallResult.gif" alt="测试安装结果"></p>
+</li>
+<li><p>修改主题<br>在<a href="https://hexo.io/themes/" target="_blank" rel="noopener">官网主题页</a>可以查询和预览主题。由于大部分主题都放在git上，所以可以直接将别人的主题（无论是主题模板，或者是别人的站点源码中的模板）通过git clone克隆到我们自己的站点上。我选用的<a href="https://github.com/theme-next/hexo-theme-next" target="_blank" rel="noopener">nexT主题</a>，可以直接将其克隆到themes文件夹中：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/theme-next/hexo-theme-next themes/next</span><br></pre></td></tr></table></figure>
+<p>然后修改<strong><em>根目录</em></strong>下的<code>_config.yml</code>中的<code>theme: landscape</code>为<code>theme: next</code><br>使用主题时，应当关注主题发布者对该主题使用的要求。特别是对原始设置需要修改才能正确使用新主题的。<br>最后需要提醒一下，注意区分<strong><em>根目录</em></strong>下的<code>_config.yml</code>和<strong><em>各主题文件夹</em></strong>下的<code>_config.yml</code>。  </p>
+</li>
+<li><p>添加tab标签页和categories分类页<br>由于文章通常可以通过标签进行标记，通过分类进行归档，为了减轻后面整理的麻烦，hexo提供了tabs和categories两个东西方便用户分类整理文章。使用以下两个语句，以创建tabs页和categories页。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hexo page categories</span><br><span class="line">hexo page tabs</span><br></pre></td></tr></table></figure>
+<p>这样会在<code>source/</code>下创建categories和pages两个文件夹，并分别在其中添加两个模板文件index.md<br>分别修改两个index.md，在<code>source/categories/index.md</code>中修改：</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#source/categories/index.md:</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">title:</span> <span class="string">分类</span></span><br><span class="line"><span class="attr">date:</span> <span class="number">2020</span><span class="number">-07</span><span class="number">-28</span> <span class="number">15</span><span class="string">:28:00</span></span><br><span class="line"><span class="attr">type:</span> <span class="string">categories</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="comment">#source/tabs/index.md:</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">title:</span> <span class="string">标签</span></span><br><span class="line"><span class="attr">date:</span> <span class="number">2020</span><span class="number">-07</span><span class="number">-28</span> <span class="number">15</span><span class="string">:27:18</span></span><br><span class="line"><span class="attr">type:</span> <span class="string">tags</span></span><br><span class="line"><span class="meta">---</span></span><br></pre></td></tr></table></figure>
+<p>也即分别添加两个type。<br>需要注意的是，categories和tabs这两个名字会直接创建到<code>source/</code>的同名文件夹中，而这些文件夹会直接映射到最终网站的二级路径上。因此应当关注主题中的tabs和categories的首页路径是否为这两个单词。<br>本文使用的nexT主题，其配置文件<code>themes/next/_config.yml</code>中，菜单栏上的tags对应的相对路径为<code>/tags</code>，也即对应的<code>source/tags</code>文件夹。点击菜单栏上的tags按钮，将会打开<code>source/tags/index.md</code>生成的对应的页面：<br><img src="/2020/07/28/%E5%BB%BA%E7%AB%99/TagsAndCategoriesHomePath.gif" alt="nexT主题中菜单栏tabs和categories首页路径"></p>
+</li>
+<li><p>创建文章<br>使用<code>hexo new ArticleTitle</code>即可在<code>source/_post/</code>创建一个<code>ArticleTitle.md</code>的md文件。<br>打开该文件，在最前的文件属性中，增加tags和categories。<br>tags可以使用诸如<code>tags: [tag1, tag2]</code>的写法，这样就给文章增加了tag1和tag2两个标签，文章发布后，在<code>/tags</code>页面就可以看到添加进去的标签了。<br>categories类似，以以下语法书写即可：</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">categories:</span> </span><br><span class="line"><span class="bullet">-</span> <span class="string">cat1</span></span><br><span class="line"><span class="bullet">-</span> <span class="string">cat2</span></span><br></pre></td></tr></table></figure>
+<p>不过文章不支持多个同级分类，但支持多级分类，上面的写法表示cat1分类中的子分类cat2。具体形式如：<br><img src="/2020/07/28/%E5%BB%BA%E7%AB%99/MultiCategories.png" alt="多级Categories"><br>当然只有一个标签或者分类时，也可以简写成：</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">tags:</span> <span class="string">theTag</span></span><br><span class="line"><span class="attr">categories:</span> <span class="string">theCat</span></span><br></pre></td></tr></table></figure>
+<p>然后正文中直接使用markdown语法书写即可。常用的markdown语法以及如何使文章更好看，将会在后续的文章中写出来。  </p>
+</li>
+<li><p>插入图片<br>这里特别写一下，如何在文章中插入图片。首先需要安装一个插件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm i hexo-asset-image -S</span><br></pre></td></tr></table></figure>
+<p>使用该插件后，插入图片采用markdown的语法：<code>![label](link)</code>，注意比超链接多了一个<code>!</code>英文的感叹号在最前面。label为图片的描述，当图破了之后将以此文字占位，link为图片的路径，可以使用相对路径。最终该标记语法将会被翻译为大致这样的html标签：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">img</span> <span class="attr">alt</span>=<span class="string">"label"</span> <span class="attr">src</span>=<span class="string">"link"</span>&gt;</span><span class="tag">&lt;/<span class="name">img</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>经过上面的配置，在重新创建新的文章时，目录<code>source/_post/</code>下应该会创建一个与md同名的文件夹，将图片放在该文件夹中，即可直接利用相对路径插入图片。但还需要进行一点修改。<br>如果放在非GitHub上，那直接在<code>![label](link)</code>的link处填写图片文件名即可，如图片TestInstallResult.gif，则对应的md语句就是<code>![测试安装结果](TestInstallResult.gif)</code>。<br>但经过试验，该插件hexo-asset-image将图片的地址转换错了。经过<a href="https://www.dazhuanlan.com/2019/12/18/5df99e24d6d27/" target="_blank" rel="noopener">大专栏—Hexo 无法加载图片（路径问题）</a>的帮助，修改hexo-asset-image的源码，将图片的地址正确拼接。具体修改的内容如下：  </p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(<span class="regexp">/.*\/index\.html$/</span>.test(link)) &#123;</span><br><span class="line">  appendLink = <span class="string">'index/'</span>;</span><br><span class="line">  <span class="keyword">var</span> endPos = link.lastIndexOf(<span class="string">'/'</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="comment">// var endPos = link.lastIndexOf('.');</span></span><br><span class="line">  <span class="comment">/* delete the above and add the follow */</span></span><br><span class="line">  <span class="keyword">var</span> endPos = link.length<span class="number">-1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样应该就可以了。<br>如果是放在GitHub Pages上，当使用的图片是jpg等格式时，由于github会对jpg等格式进行处理，所以在书写md的时候，还需要稍微加工一下，增加一个小尾巴，以让github正确放行图片请求。</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">![<span class="string">测试安装结果</span>](<span class="link">TestInstallResult.jpg?raw=true</span>)</span><br></pre></td></tr></table></figure></li>
+<li><p>发布文章<br>文章的发布遵循以下顺序。此处使用了mermaid流程图（配置可参考<a href="https://blog.csdn.net/qq_36347375/article/details/90478335" target="_blank" rel="noopener">荒野之萍-Hexo引入Mermaid流程图和MathJax数学公式</a>)</p>
 </li>
 </ol>
+<pre class="mermaid">graph LR
+  A[编写文章]-->B[生成文章]
+  B-->C[本地预览文章]
+  C-->E{效果满意}
+  E--效果不满意-->A
+  E--效果满意-->D[发布文章]</pre>
+<ul>
+<li>编写文章<br>编写文章就是上面写的这些。</li>
+<li>生成文章<br>由于文章都是使用md书写的，所以需要通过hexo将md编译为实际的页面。使用下面的命令：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hexo g</span><br><span class="line"><span class="comment">#alias for "hexo generate"</span></span><br></pre></td></tr></table></figure>
+如果没有报错的话，那就可以在<code>public</code>文件夹中看到编译好的文章。</li>
+<li>预览文章<br>通过预览功能，可以在本地启动站点的服务。该服务启动后，如果修改文章并保存的话，（刷新后）将会实时更新到本地的网页上。<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hexo s</span><br><span class="line"><span class="comment">#alias for "hexo serve"</span></span><br></pre></td></tr></table></figure></li>
+<li>发布文章<br>通过以下命令，可以将整个项目推上Github Pages。<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hexo d</span><br><span class="line"><span class="comment">#alias for "hexo deploy"</span></span><br></pre></td></tr></table></figure>
+或者直接使用<code>hexo d -g</code>一个语句自动先后完成generate和deploy。<br>不过在此之前需要配置好hexo与github的连接。修改<strong><em>根目录</em></strong>下的<code>_config.yml</code>文件，在其中找到<code>deploy</code>节，将其修改为：<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">deploy:</span></span><br><span class="line">  <span class="attr">type:</span> <span class="string">git</span></span><br><span class="line">  <span class="attr">repo:</span> <span class="string">https://github.com/discko/discko.github.io.git</span></span><br><span class="line">  <span class="attr">branch:</span> <span class="string">master</span></span><br></pre></td></tr></table></figure>
+其中repo为github上的仓库地址，可以是https的也可以是ssh的，不过需要注意的是，如果要开启Github Pages，该仓库必须命名为<code>{username}.github.io</code>，其中username为github的用户名。<br>bracnch必须为master，否则是不会显示的。<br>都配置好之后，就可以使用<a href="https://discko.github.io" target="_blank" rel="noopener">https://discko.github.io</a>来访问了。</li>
+</ul>
 
     </div>
 
@@ -388,6 +432,14 @@
   <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
   </div>
 
+
+  <script src='https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize();
+    }
+  </script>
+
         
 
 
@@ -433,6 +485,19 @@
 
 
 
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'forest',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
 
 
   
