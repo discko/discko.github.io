@@ -20,28 +20,34 @@
     var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta property="og:type" content="website">
-<meta property="og:title" content="吴迪小站">
-<meta property="og:url" content="http://yoursite.com/index.html">
+  <meta name="description" content="题干给出两个 非空 的链表用来表示两个非负的整数。其中，它们各自的位数是按照 逆序 的方式存储的，并且它们的每个节点只能存储 一位 数字。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LC-0002-两数相加">
+<meta property="og:url" content="http://yoursite.com/2020/07/31/LC-0002-%E4%B8%A4%E6%95%B0%E7%9B%B8%E5%8A%A0/index.html">
 <meta property="og:site_name" content="吴迪小站">
+<meta property="og:description" content="题干给出两个 非空 的链表用来表示两个非负的整数。其中，它们各自的位数是按照 逆序 的方式存储的，并且它们的每个节点只能存储 一位 数字。">
 <meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-07-31T05:01:20.000Z">
+<meta property="article:modified_time" content="2020-07-31T05:43:44.012Z">
 <meta property="article:author" content="吴迪">
+<meta property="article:tag" content="LeetCode">
+<meta property="article:tag" content="HashTable">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://yoursite.com/">
+<link rel="canonical" href="http://yoursite.com/2020/07/31/LC-0002-%E4%B8%A4%E6%95%B0%E7%9B%B8%E5%8A%A0/">
 
 
 <script id="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome : true,
-    isPost : false,
+    isHome : false,
+    isPost : true,
     lang   : 'zh-CN'
   };
 </script>
 
-  <title>吴迪小站</title>
+  <title>LC-0002-两数相加 | 吴迪小站</title>
   
 
 
@@ -149,9 +155,10 @@
         <div class="content-wrap">
           
 
-          <div class="content index posts-expand">
+          <div class="content post posts-expand">
             
-      
+
+    
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
@@ -167,10 +174,9 @@
       <meta itemprop="name" content="吴迪小站">
     </span>
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/07/31/LC-0002-%E4%B8%A4%E6%95%B0%E7%9B%B8%E5%8A%A0/" class="post-title-link" itemprop="url">LC-0002-两数相加</a>
-        </h2>
+        <h1 class="post-title" itemprop="name headline">
+          LC-0002-两数相加
+        </h1>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -203,186 +209,74 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="题干"><a href="#题干" class="headerlink" title="题干"></a>题干</h1><p>给出两个 非空 的链表用来表示两个非负的整数。其中，它们各自的位数是按照 逆序 的方式存储的，并且它们的每个节点只能存储 一位 数字。<br></p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/07/31/LC-0002-%E4%B8%A4%E6%95%B0%E7%9B%B8%E5%8A%A0/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
+        <h1 id="题干"><a href="#题干" class="headerlink" title="题干"></a>题干</h1><p>给出两个 非空 的链表用来表示两个非负的整数。其中，它们各自的位数是按照 逆序 的方式存储的，并且它们的每个节点只能存储 一位 数字。<br><a id="more"></a><br>如果，我们将这两个数相加起来，则会返回一个新的链表来表示它们的和。<br>您可以假设除了数字 0 之外，这两个数都不会以 0 开头。<br>示例：</p>
+<blockquote>
+<p>输入：(2 -&gt; 4 -&gt; 3) + (5 -&gt; 6 -&gt; 4)<br>输出：7 -&gt; 0 -&gt; 8<br>原因：342 + 465 = 807  </p>
+</blockquote>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><p>此题说明了数字是按照逆序排列的，所以两个链表中对应位置的数字，在加法中是同一位的，不需要再进行对齐。因此，可直接用模拟法，进行处理。<br>在加法过程中，我们通常以「加数1+加数2+进位=和」这种方式来计算。其中「加数1」和「加数2」都已在链表中对齐提供了，进位的值仅可能取$carry\in{0,1}$两个，和（sum）的范围仅可能是在$sum\in{x|x\le19}$。当前位的值应当为sum的个位，进位值应当为sum的十位。<br>需要注意的是，有这样一些坑在里面： </p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left"></th>
+<th style="text-align:left">case 1</th>
+<th style="text-align:left">case 2</th>
+<th style="text-align:left">case 3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">addend1</td>
+<td style="text-align:left">3</td>
+<td style="text-align:left">3-&gt;4</td>
+<td style="text-align:left">1</td>
+</tr>
+<tr>
+<td style="text-align:left">addend2</td>
+<td style="text-align:left">1-&gt;2</td>
+<td style="text-align:left">7</td>
+<td style="text-align:left">9-&gt;9</td>
+</tr>
+<tr>
+<td style="text-align:left">sum</td>
+<td style="text-align:left">4-&gt;2</td>
+<td style="text-align:left">0-&gt;5</td>
+<td style="text-align:left">0-&gt;0-&gt;1</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>也就是两个加数的长度可能不一样，且存在加数结束了但仍有进位的问题。为此，不妨在任意时刻，只要加数1链表没有结束、加数2链表没有结束或者进位不为0，这3个条件任意成立1个，就继续计算下一位。当然对于该位已经为0的链表，认为该链表的该位为0即可。<br>最终代码如下：</p>
+<h1 id="解题"><a href="#解题" class="headerlink" title="解题"></a>解题</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="comment">// class ListNode&#123;</span></span><br><span class="line">    <span class="comment">//     ListNode next;</span></span><br><span class="line">    <span class="comment">//     int val;</span></span><br><span class="line">    <span class="comment">//     ListNode(int x)&#123;val=x;&#125;</span></span><br><span class="line">    <span class="comment">// &#125;</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ListNode <span class="title">addTwoNumbers</span><span class="params">(ListNode l1, ListNode l2)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> carry=<span class="number">0</span>;</span><br><span class="line">        <span class="comment">//use a dummy node as the head. </span></span><br><span class="line">        ListNode head=<span class="keyword">new</span> ListNode(Integer.MIN_VALUE);</span><br><span class="line">        <span class="comment">//p is the iterator</span></span><br><span class="line">        ListNode p=head;</span><br><span class="line">        <span class="keyword">while</span>(l1!=<span class="keyword">null</span> || l2!=<span class="keyword">null</span> || carry!=<span class="number">0</span>)&#123;</span><br><span class="line">            <span class="keyword">int</span> val=(l1==<span class="keyword">null</span>?<span class="number">0</span>:l1.val)+(l2==<span class="keyword">null</span>?<span class="number">0</span>:l2.val)+carry;</span><br><span class="line">            carry=val/<span class="number">10</span>;</span><br><span class="line">            p.next=<span class="keyword">new</span> ListNode(val%<span class="number">10</span>);</span><br><span class="line">            p=p.next;</span><br><span class="line">            l1=l1==<span class="keyword">null</span>?<span class="keyword">null</span>:l1.next;</span><br><span class="line">            l2=l2==<span class="keyword">null</span>?<span class="keyword">null</span>:l2.next;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> head.next;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
     </div>
 
     
     
     
+
       <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
+          <div class="post-tags">
+              <a href="/tags/LeetCode/" rel="tag"># LeetCode</a>
+              <a href="/tags/HashTable/" rel="tag"># HashTable</a>
+          </div>
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/31/LC-0001-%E4%B8%A4%E6%95%B0%E4%B9%8B%E5%92%8C/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg?raw=true">
-      <meta itemprop="name" content="吴迪">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="吴迪小站">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/07/31/LC-0001-%E4%B8%A4%E6%95%B0%E4%B9%8B%E5%92%8C/" class="post-title-link" itemprop="url">LC-0001-两数之和</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-07-31 10:24:18 / 修改时间：13:40:06" itemprop="dateCreated datePublished" datetime="2020-07-31T10:24:18+08:00">2020-07-31</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="题干"><a href="#题干" class="headerlink" title="题干"></a>题干</h1><p>给定一个整数数组 nums 和一个目标值 target，请你在该数组中找出和为目标值的那 两个 整数，并返回他们的数组下标。<br>你可以假设每种输入只会对应一个答案。但是，数组中同一个元素不能使用两遍。<br></p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/07/31/LC-0001-%E4%B8%A4%E6%95%B0%E4%B9%8B%E5%92%8C/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
         
-      
-    </div>
 
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/28/%E5%BB%BA%E7%AB%99/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg?raw=true">
-      <meta itemprop="name" content="吴迪">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="吴迪小站">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/07/28/%E5%BB%BA%E7%AB%99/" class="post-title-link" itemprop="url">建站</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-07-28 14:57:53" itemprop="dateCreated datePublished" datetime="2020-07-28T14:57:53+08:00">2020-07-28</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-07-30 13:08:11" itemprop="dateModified" datetime="2020-07-30T13:08:11+08:00">2020-07-30</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E7%BD%91%E7%AB%99%E5%BB%BA%E8%AE%BE/" itemprop="url" rel="index"><span itemprop="name">网站建设</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>本篇最主要的目的，是记录一下使用Hexo在GitHub Pages上建立个人站的过程。整个建站过程，包括对一些基础功能的熟悉，大约历时2小时。(现在图片都在GitHub上，所以打开有点慢，未来会移到图床上或者增加一个CDN，来加速图片显示，先将就一下)<br></p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/07/28/%E5%BB%BA%E7%AB%99/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
         
-      
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/07/31/LC-0001-%E4%B8%A4%E6%95%B0%E4%B9%8B%E5%92%8C/" rel="prev" title="LC-0001-两数之和">
+      <i class="fa fa-chevron-left"></i> LC-0001-两数之和
+    </a></div>
+      <div class="post-nav-item"></div>
     </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
       </footer>
+    
   </article>
   
   
-  
-
-
   
 
 
@@ -435,6 +329,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#题干"><span class="nav-number">1.</span> <span class="nav-text">题干</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分析"><span class="nav-number">2.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#解题"><span class="nav-number">3.</span> <span class="nav-text">解题</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

@@ -222,8 +222,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>本篇最主要的目的，是记录一下使用Hexo在GitHub Pages上建立个人站的过程。整个建站过程，包括对一些基础功能的熟悉，大约历时2小时。(现在图片都在GitHub上，所以打开有点慢，未来会移到图床上或者增加一个CDN，来加速图片显示，先将就一下)</p>
-<a id="more"></a>
+        <p>本篇最主要的目的，是记录一下使用Hexo在GitHub Pages上建立个人站的过程。整个建站过程，包括对一些基础功能的熟悉，大约历时2小时。(现在图片都在GitHub上，所以打开有点慢，未来会移到图床上或者增加一个CDN，来加速图片显示，先将就一下)<br><a id="more"></a></p>
 <h1 id="写在前面"><a href="#写在前面" class="headerlink" title="写在前面"></a>写在前面</h1><p>最终还是提出了离职，在准备交接的过程中，整理了不少之前的代码和文档，为了对过去的成果进行总结和记录以供未来查阅，同时也为了让自己对技术积累过程有一个回顾的机会，决定建设一个小日记本（其实已经想做很多年了）。<br>当然了，本站绝不会涉及所在公司的核心业务代码和保密技术，仅用于记录自己的想法和试验性质的尝试。<br>同时，由于我也在刷LeetCode，也会将一些题目的解题心得记录在此。</p>
 <h1 id="感谢"><a href="#感谢" class="headerlink" title="感谢"></a>感谢</h1><p>在建站过程中，我主要参考了以下几位的博文，在此表示感谢。</p>
 <blockquote>
@@ -241,7 +240,7 @@
 <h1 id="开始建站"><a href="#开始建站" class="headerlink" title="开始建站"></a>开始建站</h1><ol>
 <li><p>安装Node.js<br><a href="https://hexo.io/zh-cn/" target="_blank" rel="noopener">Hexo</a>是一个基于Node.js的快速建站工具。因此首先需要安装Node.js。<br>可以<a href="http://nodejs.cn/download/" target="_blank" rel="noopener">在此</a>下载和安装Node.js，并使用<code>node -v</code>确认安装和环境配置情况。</p>
 </li>
-<li><p>安装Hexo<br>在vscode中，打开一个根目录（本文以<del>/program为根目录），使用`ctrl+</del>`唤出terminal，使用npm命令安装hexo-cli、初始化一个文件夹blog用于存放hexo工程，并进入该文件夹：  </p>
+<li><p>安装Hexo<br>在vscode中，打开一个根目录（本文以~/program为根目录），使用<code>ctrl+~</code>唤出terminal，使用npm命令安装hexo-cli、初始化一个文件夹blog用于存放hexo工程，并进入该文件夹：  </p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">npm i hexo-cli -g</span><br><span class="line">hexo init blog</span><br><span class="line"><span class="built_in">cd</span> blog</span><br></pre></td></tr></table></figure>
 <p>安装慢的话，可以将npm源切换至<code>https://registry.npm.taobao.org</code>，或使用cnpm执行install动作。在此不再赘述。<code>hexo init</code>的过程中，如果速度过慢，可以科学上网以解决该问题。<br>安装完成后，使用以下命令启动本地hexo服务，并尝试打开输出结果中提示的localhost网址（本例中为<code>http://localhost:4000</code>)：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo serve</span><br></pre></td></tr></table></figure>
@@ -263,23 +262,18 @@
 <figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">tags:</span> <span class="string">theTag</span></span><br><span class="line"><span class="attr">categories:</span> <span class="string">theCat</span></span><br></pre></td></tr></table></figure>
 <p>然后正文中直接使用markdown语法书写即可。常用的markdown语法以及如何使文章更好看，将会在后续的文章中写出来。  </p>
 </li>
-<li><p>插入图片<br>这里特别写一下，如何在文章中插入图片。首先需要安装一个插件：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm i hexo-asset-image -S</span><br></pre></td></tr></table></figure>
-<p>使用该插件后，插入图片采用markdown的语法：<code>![label](link)</code>，注意比超链接多了一个<code>!</code>英文的感叹号在最前面。label为图片的描述，当图破了之后将以此文字占位，link为图片的路径，可以使用相对路径。最终该标记语法将会被翻译为大致这样的html标签：</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">img</span> <span class="attr">alt</span>=<span class="string">"label"</span> <span class="attr">src</span>=<span class="string">"link"</span>&gt;</span><span class="tag">&lt;/<span class="name">img</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p>经过上面的配置，在重新创建新的文章时，目录<code>source/_post/</code>下应该会创建一个与md同名的文件夹，将图片放在该文件夹中，即可直接利用相对路径插入图片。但还需要进行一点修改。<br>如果放在非GitHub上，那直接在<code>![label](link)</code>的link处填写图片文件名即可，如图片TestInstallResult.gif，则对应的md语句就是<code>![测试安装结果](TestInstallResult.gif)</code>。<br>但经过试验，该插件hexo-asset-image将图片的地址转换错了。经过<a href="https://www.dazhuanlan.com/2019/12/18/5df99e24d6d27/" target="_blank" rel="noopener">大专栏—Hexo 无法加载图片（路径问题）</a>的帮助，修改hexo-asset-image的源码，将图片的地址正确拼接。具体修改的内容如下：  </p>
-<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(<span class="regexp">/.*\/index\.html$/</span>.test(link)) &#123;</span><br><span class="line">  appendLink = <span class="string">'index/'</span>;</span><br><span class="line">  <span class="keyword">var</span> endPos = link.lastIndexOf(<span class="string">'/'</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="comment">// var endPos = link.lastIndexOf('.');</span></span><br><span class="line">  <span class="comment">/* delete the above and add the follow */</span></span><br><span class="line">  <span class="keyword">var</span> endPos = link.length<span class="number">-1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这样应该就可以了。<br>如果是放在GitHub Pages上，当使用的图片是jpg等格式时，由于github会对jpg等格式进行处理，所以在书写md的时候，还需要稍微加工一下，增加一个小尾巴，以让github正确放行图片请求。</p>
-<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">![<span class="string">测试安装结果</span>](<span class="link">TestInstallResult.jpg?raw=true</span>)</span><br></pre></td></tr></table></figure></li>
-<li><p>发布文章<br>文章的发布遵循以下顺序。此处使用了mermaid流程图（配置可参考<a href="https://blog.csdn.net/qq_36347375/article/details/90478335" target="_blank" rel="noopener">荒野之萍-Hexo引入Mermaid流程图和MathJax数学公式</a>)</p>
-</li>
+<li>插入图片<br>这里特别写一下，如何在文章中插入图片。首先需要安装一个插件：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm i hexo-asset-image -S</span><br></pre></td></tr></table></figure>
+使用该插件后，插入图片采用markdown的语法：<code>![label](link)</code>，注意比超链接多了一个<code>!</code>英文的感叹号在最前面。label为图片的描述，当图破了之后将以此文字占位，link为图片的路径，可以使用相对路径。最终该标记语法将会被翻译为大致这样的html标签：<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">img</span> <span class="attr">alt</span>=<span class="string">"label"</span> <span class="attr">src</span>=<span class="string">"link"</span>&gt;</span><span class="tag">&lt;/<span class="name">img</span>&gt;</span></span><br></pre></td></tr></table></figure>
+经过上面的配置，在重新创建新的文章时，目录<code>source/_post/</code>下应该会创建一个与md同名的文件夹，将图片放在该文件夹中，即可直接利用相对路径插入图片。但还需要进行一点修改。<br>如果放在非GitHub上，那直接在<code>![label](link)</code>的link处填写图片文件名即可，如图片TestInstallResult.gif，则对应的md语句就是<code>![测试安装结果](TestInstallResult.gif)</code>。<br>但经过试验，该插件hexo-asset-image将图片的地址转换错了。经过<a href="https://www.dazhuanlan.com/2019/12/18/5df99e24d6d27/" target="_blank" rel="noopener">大专栏—Hexo 无法加载图片（路径问题）</a>的帮助，修改hexo-asset-image的源码，将图片的地址正确拼接。具体修改的内容如下：  <figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(<span class="regexp">/.*\/index\.html$/</span>.test(link)) &#123;</span><br><span class="line">  appendLink = <span class="string">'index/'</span>;</span><br><span class="line">  <span class="keyword">var</span> endPos = link.lastIndexOf(<span class="string">'/'</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="comment">// var endPos = link.lastIndexOf('.');</span></span><br><span class="line">  <span class="comment">/* delete the above and add the follow */</span></span><br><span class="line">  <span class="keyword">var</span> endPos = link.length<span class="number">-1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+这样应该就可以了。<br>如果是放在GitHub Pages上，当使用的图片是jpg等格式时，由于github会对jpg等格式进行处理，所以在书写md的时候，还需要稍微加工一下，增加一个小尾巴，以让github正确放行图片请求。<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">![<span class="string">测试安装结果</span>](<span class="link">TestInstallResult.jpg?raw=true</span>)</span><br></pre></td></tr></table></figure></li>
+<li>发布文章<br>文章的发布遵循以下顺序。此处使用了mermaid流程图（配置可参考<a href="https://blog.csdn.net/qq_36347375/article/details/90478335" target="_blank" rel="noopener">荒野之萍-Hexo引入Mermaid流程图和MathJax数学公式</a>)</li>
 </ol>
-<pre class="mermaid">graph LR
+<p><pre class="mermaid">graph LR
   A[编写文章]-->B[生成文章]
   B-->C[本地预览文章]
   C-->E{效果满意}
   E--效果不满意-->A
-  E--效果满意-->D[发布文章]</pre>
+  E--效果满意-->D[发布文章]</pre></p>
 <ul>
 <li>编写文章<br>编写文章就是上面写的这些。</li>
 <li>生成文章<br>由于文章都是使用md书写的，所以需要通过hexo将md编译为实际的页面。使用下面的命令：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hexo g</span><br><span class="line"><span class="comment">#alias for "hexo generate"</span></span><br></pre></td></tr></table></figure>
@@ -291,8 +285,8 @@
 其中repo为github上的仓库地址，可以是https的也可以是ssh的，不过需要注意的是，如果要开启Github Pages，该仓库必须命名为<code>{username}.github.io</code>，其中username为github的用户名。<br>bracnch必须为master，否则是不会显示的。<br>都配置好之后，就可以使用<a href="https://discko.github.io" target="_blank" rel="noopener">https://discko.github.io</a>来访问了。</li>
 <li>清理<br>当修改旧文件始终无法生效时，可以使用以下命令进行清理工作空间。建议deploy之前总是使用该命令先清理一下：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo clean</span><br></pre></td></tr></table></figure></li>
 </ul>
-<ol start="8">
-<li>个性化域名<br>如果自己拥有域名的话，可以使用个性化域名。在GitHub上和自己的DNS提供商处简单配置就好了。<br>首先是GitHub上。打开到该仓库的设置，找到GitHub Pages节，将自己的域名填入Custom Domain一栏之中，并勾选Enforce HTTPS。这样，访问该自定义域名或者访问原来的（如discko.github.io)都将自动以自定义的域名打开，并且强制使用HTTPS进行访问（证书是Let’s Encrypted的，由GitHub自动申请和续期）。<br><img src="/2020/07/28/%E5%BB%BA%E7%AB%99/GithubCustomDomain.png" alt="CustomDomain"><br>然后去自己的DNS服务商那边，为自己的域名添加一个CNAME的记录，指向自己的GitHub Pages仓库。对于我的设置而言，因为我的个性化域名为<a href="http://www.wudi.space" target="_blank" rel="noopener">www.wudi.space</a> ，所以主机记录填www（如果是blog.wudi.space ，则主机记录就是blog），记录类型为CNAME，记录值为discko.github.io。（图中记录值结尾的那个点是腾讯云自己生成的，不要手动输入，不然会有问题）<br><img src="/2020/07/28/%E5%BB%BA%E7%AB%99/DNSSetting.png" alt="DNSSetting"><br>稍等一会儿，让GitHub Pages和DNS的设置生效，刷新一下浏览器缓存，就可以使用自己的域名访问咯。<br><img src="/2020/07/28/%E5%BB%BA%E7%AB%99/SiteView.png" alt="SiteView"></li>
+<ol>
+<li>个性化域名<br>如果自己拥有域名的话，可以使用个性化域名。在GitHub上和自己的DNS提供商处简单配置就好了。<br>首先是GitHub上。打开到该仓库的设置，找到GitHub Pages节，将自己的域名填入Custom Domain一栏之中，并勾选Enforce HTTPS。这样，访问该自定义域名或者访问原来的（如discko.github.io)都将自动以自定义的域名打开，并且强制使用HTTPS进行访问（证书是Let’s Encrypted的，由GitHub自动申请和续期）。<br><img src="/2020/07/28/%E5%BB%BA%E7%AB%99/GithubCustomDomain.png" alt="CustomDomain"><br>然后去自己的DNS服务商那边，为自己的域名添加一个CNAME的记录，指向自己的GitHub Pages仓库。对于我的设置而言，因为我的个性化域名为www.wudi.space ，所以主机记录填www（如果是blog.wudi.space ，则主机记录就是blog），记录类型为CNAME，记录值为discko.github.io。（图中记录值结尾的那个点是腾讯云自己生成的，不要手动输入，不然会有问题）<br><img src="/2020/07/28/%E5%BB%BA%E7%AB%99/DNSSetting.png" alt="DNSSetting"><br>稍等一会儿，让GitHub Pages和DNS的设置生效，刷新一下浏览器缓存，就可以使用自己的域名访问咯。<br><img src="/2020/07/28/%E5%BB%BA%E7%AB%99/SiteView.png" alt="SiteView"></li>
 </ol>
 
     </div>
@@ -311,6 +305,13 @@
 
 
         
+    <div class="post-nav">
+      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2020/07/31/LC-0001-%E4%B8%A4%E6%95%B0%E4%B9%8B%E5%92%8C/" rel="next" title="LC-0001-两数之和">
+      LC-0001-两数之和 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
       </footer>
     
   </article>
@@ -384,20 +385,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">1</span>
+          <span class="site-state-item-count">3</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-count">2</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -500,6 +501,8 @@ if (document.querySelectorAll('pre.mermaid').length) {
 }
 </script>
 
+
+  
 
   
 
