@@ -180,7 +180,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2020-07-31 15:15:35 / 修改时间：16:36:55" itemprop="dateCreated datePublished" datetime="2020-07-31T15:15:35+08:00">2020-07-31</time>
+              <time title="创建时间：2020-07-31 15:15:35 / 修改时间：16:37:58" itemprop="dateCreated datePublished" datetime="2020-07-31T15:15:35+08:00">2020-07-31</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -203,34 +203,15 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="题干"><a href="#题干" class="headerlink" title="题干"></a>题干</h1><p>给定一个字符串，请你找出其中不含有重复字符的 最长子串 的长度。</p>
-<p>示例 1:</p>
-<blockquote>
-<p>输入: “abcabcbb”<br>输出: 3<br>解释: 因为无重复字符的最长子串是 “abc”，所以其长度为 3。 </p>
-</blockquote>
-<p>示例 2:</p>
-<blockquote>
-<p>输入: “bbbbb”<br>输出: 1<br>解释: 因为无重复字符的最长子串是 “b”，所以其长度为 1。  </p>
-</blockquote>
-<p>示例 3:</p>
-<blockquote>
-<p>输入: “pwwkew”<br>输出: 3<br>解释: 因为无重复字符的最长子串是 “wke”，所以其长度为 3。<br>请注意，你的答案必须是 子串 的长度，”pwke” 是一个子序列，不是子串。</p>
-</blockquote>
-<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><p>此题所需要的，是寻找一个子串，判断其是否含有重复字符。如果含有重复字符，则换下一个子串；否则判断当前子串的长度是否超过目前已经找到的满足题意的子串的长度。所以，我们需要确定的，是如何去取子串，并快速判断该子串中知否存在重复字符。<br>取字符串时，采用滑动窗口的方式。窗口有两个参数，一个是位置，一个是大小，也即窗宽和窗位。我们使用<code>start</code>和<code>end</code>两个指针来代表这个滑动窗口即可。<br>快速判断是否存在重复字符简单，利用Hash Table，key记录字符，value记录最后一次出现该字符的位置。只要<code>str[end]</code>最后一次出现的位置在start之前，就说明在<code>str[start,end]</code>之间出现了重复的字符。</p>
-<p>比如一个带判断的字符串$abcdcefg$，我们选择一个子串$\boxed{a}bcdcefg$，其中是没有重复字符的，那么就向右多选择一个字符。  </p>
-<p>得到$\boxed{ab}cdcefg$，仍然没有重复字符，此时最大无重复字符子串长度为2。则再向右多选则一个。  </p>
-<p>得到$\boxed{abc}dcefg$，仍然没有重复字符，此时最大无重复字符子串长度为3。则再向右多选择一个。 </p>
-<p>得到$\boxed{abcd}cefg$，仍然没有重复字符，此时最大无重复字符子串长度为4。则再向右多选择一个。  </p>
-<p>得到$\boxed{abcdc}efg$，此时有了重复字符。那么接下来有两种选择子串的方式：</p>
-<ul>
-<li>方法一：回头重新选择：<br>选择$a\boxed{bc}dcefg$。此种选择方法其实之前在判断$\boxed{abc}dcefg$时已经判断过了，一定是没有重复字符的。所以这种方法比较浪费时间。这样的时间复杂度为$O(n^2)$</li>
-<li>方法二：仅移动左边界：<br>选择$a\boxed{bcd}cefg$。没有重复的，然后右边界移动，得到$a\boxed{bcdc}efg$。有重复的，左边界再移动，$ab\boxed{cdc}efg$。有重复的，左边界再移动，$abc\boxed{dc}efg$。没有重复的了。以此类推，这样的时间复杂度最坏为$O(2n)=O(n)$，也即最坏情况下（如$aaaaa$）右边界移动一下，左边界移动一下。</li>
-<li>方法三：双边界都移动：<br>因为如果需要判断$\boxed{abcdc}efg$，则在此之前其无重复字符的子串的最大长度一定至少是4了。只需要判断长度为5或更大的即可。因此将整个框子向右移动一次：$a\boxed{bcdce}fg$。发现其中有重复字符。那如果左边界直接跳过重复字符呢？<br>由于刚刚的重复字符是c，前一个重复字符位于2处，所以左边界直接跳至3，同时右边界移动1个位置，得到：$abc\boxed{dce}fg$。然后右边界逐步向右。<br>注意，右侧只能一步一步往前走，如果右边界向右跳的话，就无法往Hash Table中添加字符信息了。另外，如果在Hash Table中存储字符所在位置的后一个位置的话，左边界在跳跃时，就不需要再+1了。</li>
-</ul>
-<h1 id="解题"><a href="#解题" class="headerlink" title="解题"></a>解题</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">lengthOfLongestSubstring</span><span class="params">(String s)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(s.isEmpty())&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//minimum answer is 1 letter as a substring.</span></span><br><span class="line">        <span class="keyword">int</span> ans=<span class="number">1</span>;</span><br><span class="line">        <span class="keyword">int</span> start=<span class="number">0</span>, end=<span class="number">0</span>;</span><br><span class="line">        <span class="keyword">int</span> sLen=s.length();</span><br><span class="line">        <span class="comment">//store last character's position. key: character, value: position</span></span><br><span class="line">        HashMap&lt;Character, Integer&gt; map=<span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">        <span class="keyword">while</span>(end&lt;sLen)&#123;</span><br><span class="line">            <span class="keyword">char</span> cEnd=s.charAt(end);</span><br><span class="line">            <span class="keyword">if</span>(map.containsKey(cEnd))&#123;</span><br><span class="line">                <span class="comment">//when find duplicate character, start jump to the position</span></span><br><span class="line">                <span class="comment">//if the position &gt; start</span></span><br><span class="line">                <span class="comment">//or the duplicate character appears before the start (and </span></span><br><span class="line">                <span class="comment">//it means the character str[end] is not duplicated in</span></span><br><span class="line">                <span class="comment">//str[start, end])</span></span><br><span class="line">                start=Integer.max(start, map.get(cEnd));</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//increase end first, and then put(cEnd, end), store</span></span><br><span class="line">            <span class="comment">// the position 1 behind the character</span></span><br><span class="line">            end++;</span><br><span class="line">            map.put(cEnd, end);</span><br><span class="line">            ans=Integer.max(end-start, ans);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> ans;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h1 id="复杂度分析"><a href="#复杂度分析" class="headerlink" title="复杂度分析"></a>复杂度分析</h1><p>时间上，由于end一直在向右移动，未曾停歇，所以一共执行了n次。而每一次中，移动start、插入Hash Table、查询Hash Table、计算ans都是$O(1)$的，因此时间复杂度为$O(n)$。  </p>
-<p>空间上，由于使用了Hash Table，并且每一个不同的字符都会存储在Hash Table中，所以空间复杂度为$O(n)$。</p>
-
+          <h1 id="题干"><a href="#题干" class="headerlink" title="题干"></a>题干</h1><p>给定一个字符串，请你找出其中不含有重复字符的 最长子串 的长度。<br></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/07/31/LC-0003-%E6%97%A0%E9%87%8D%E5%A4%8D%E5%AD%97%E7%AC%A6%E7%9A%84%E6%9C%80%E9%95%BF%E5%AD%90%E4%B8%B2/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
