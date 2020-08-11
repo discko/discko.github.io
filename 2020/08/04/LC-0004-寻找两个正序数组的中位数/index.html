@@ -28,7 +28,7 @@
 <meta property="og:description" content="题干给定两个大小为 m 和 n 的正序（从小到大）数组 nums1 和 nums2。请你找出这两个正序数组的中位数，并且要求算法的时间复杂度为 O(log(m + n))。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-08-04T06:36:43.000Z">
-<meta property="article:modified_time" content="2020-08-11T04:14:53.696Z">
+<meta property="article:modified_time" content="2020-08-11T08:43:26.623Z">
 <meta property="article:author" content="吴迪">
 <meta property="article:tag" content="LeetCode">
 <meta property="article:tag" content="BinarySearch">
@@ -193,7 +193,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-08-11 12:14:53" itemprop="dateModified" datetime="2020-08-11T12:14:53+08:00">2020-08-11</time>
+                <time title="修改时间：2020-08-11 16:43:26" itemprop="dateModified" datetime="2020-08-11T16:43:26+08:00">2020-08-11</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -225,7 +225,11 @@
       
         <h1 id="题干"><span class="post-title-index">1. </span><a href="#题干" class="headerlink" title="题干"></a>题干</h1><p>给定两个大小为 m 和 n 的正序（从小到大）数组 nums1 和 nums2。<br>请你找出这两个正序数组的中位数，并且要求算法的时间复杂度为 O(log(m + n))。<br><a id="more"></a><br>你可以假设 nums1 和 nums2 不会同时为空。<br>示例1</p>
 <blockquote>
-<p>nums1 = [1, 3]<br>nums2 = [2]<br>则中位数是 2.0<br>示例2<br>nums1 = [1, 2]<br>nums2 = [3, 4]<br>则中位数是 (2 + 3)/2 = 2.5</p>
+<p>nums1 = [1, 3]<br>nums2 = [2]<br>则中位数是 2.0</p>
+</blockquote>
+<p>示例2</p>
+<blockquote>
+<p>nums1 = [1, 2]<br>nums2 = [3, 4]<br>则中位数是 (2 + 3)/2 = 2.5</p>
 </blockquote>
 <h1 id="分析"><span class="post-title-index">2. </span><a href="#分析" class="headerlink" title="分析"></a>分析</h1><p>为了表述方便，我们设<code>len1=nums1.length</code>,<code>len2=nums2.length</code>。<br>第一反应是归并，一边归并一边计数，当归并到达总数的一半$(len1+len2)/2$时，即可认为到达中位数了。但这种方法的时间复杂度为$O(len1+len2)$，所以不符合题目要求。<br>看到时间复杂度为$log(x)$则很容易想到使用二分法。那么最主要的就是，怎么分。  </p>
 <h2 id="基础概念"><span class="post-title-index">2.1. </span><a href="#基础概念" class="headerlink" title="基础概念"></a>基础概念</h2><p>回归最原始的想法。对于奇数长度的数组，如果我们有一个中位数，则中位数将这个有序数组的长度分为了左右两个部分，左边与右边长度应该是相等的，独留中位数一个数：  </p>
@@ -235,10 +239,10 @@
 <script type="math/tex; mode=display">1\quad2\quad3\quad4\quad|\quad5\quad6\quad7\quad8</script><p>如此一来，对于一个数组，我们只要能够找到这条分割线，那么中位数就是分割线左边的那个元素（如果数组长度是奇数），或者是分割线左右两侧各1个数的平均值（如果数组长度是偶数）。</p>
 <h2 id="回到原题"><span class="post-title-index">2.2. </span><a href="#回到原题" class="headerlink" title="回到原题"></a>回到原题</h2><p>那么对于本题中，如果输入的是两个数组的话，我们需要将两个数组中的所有元素合起来，并分为两个部分。也即两个数组中各划一个分隔符。将分隔符以左的所有数，严格小于分隔符以右的所有数。<br>对于奇数总长的：</p>
 <script type="math/tex; mode=display">
-\begin{align}
+\begin{align*}
 &1\quad2\quad4\quad|\quad6 \\
 &1\quad3\quad|\quad4\quad5\quad9
-\end{align}</script><p>这里的分隔符将两个数组分割为了左右两个部分，且左侧元素个数为5，右侧元素个数为4，即左侧元素个数不少于右侧元素个数。由于左侧的<code>1 1 2 3 4</code>严格小于右侧的<code>4 5 6 9</code>，所以，中位数的位置非常明显，将是左侧这5个数里的最大值。也就是<code>4</code>。<br>同理，对于偶数总长的： </p>
+\end{align*}</script><p>这里的分隔符将两个数组分割为了左右两个部分，且左侧元素个数为5，右侧元素个数为4，即左侧元素个数不少于右侧元素个数。由于左侧的<code>1 1 2 3 4</code>严格小于右侧的<code>4 5 6 9</code>，所以，中位数的位置非常明显，将是左侧这5个数里的最大值。也就是<code>4</code>。<br>同理，对于偶数总长的： </p>
 <script type="math/tex; mode=display">
 \begin{align*}
 &1\quad2\quad4\quad|\quad6 \\
@@ -248,11 +252,96 @@
 \begin{equation*}
 median=\left\{
 \begin{aligned}
-& \max(nums1a,\,nums2a), & &when\,len1+len2\,is\,odd \\
-& \frac{\max(nums1a,\,nums2a)+\min(nums1b,\,nums2b)}{2}, & &when\,len1+len2\,is\,even \\
+& \max(nums1a,\,nums2a), & &(len1+len2)\in odd \\
+& \frac{\max(nums1a,\,nums2a)+\min(nums1b,\,nums2b)}{2}, & &(len1+len2)\in even \\
 \end{aligned}
 \right.
-\end{equation*}</script><h2 id="找中位数"><span class="post-title-index">2.3. </span><a href="#找中位数" class="headerlink" title="找中位数"></a>找中位数</h2><p>那么接下来，剩下的就是如何找中位数了</p>
+\end{equation*}</script><h2 id="找分割线"><span class="post-title-index">2.3. </span><a href="#找分割线" class="headerlink" title="找分割线"></a>找分割线</h2><p>那么接下来，剩下的就是如何找分割线了。<br>根据上面的分析，我们知道，分割线一定会将两个数组分割为左右两个区域，且左右两个区域中数字的个数一定是相等的（当总长度为偶数时）或左边比右边多1个（当总长度为奇数时）。因此，如果设<code>i</code>为nums1中分割线左侧的元素数量，<code>j</code>为nums2中分割线左侧元素的数量。  </p>
+<p><strong><em>这里可以引申一下，对于<code>nums1[i]</code>就表示取nums1数组中分割线右侧的那个元素，<code>nums1[i-1]</code>就表示取分割线左侧的元素；<code>nums2[j]</code>和<code>nums2[j-1]</code>同理，表示取nums2中分割线右侧和左侧的元素。</em></strong>  </p>
+<p>则一定有：  </p>
+<script type="math/tex; mode=display">i+j=(len1+len2+1)/2</script><p>其中等式右侧的<code>/</code>为整除，被除数中<code>+1</code>是为了统一总长度为奇数与偶数的两种情况。</p>
+<p>接下来，分割线的另一个性质是：分割线左侧的所有数一定不大于右侧所有数。也即：</p>
+<script type="math/tex; mode=display">\max(leftNumbers)<=\min(rightNumbers)</script><p>而对于<code>i</code>而言，如果<code>nums1[i-1]</code>&gt;<code>nums2[j]</code>，也即如下图中所示的$c$&gt;$d$，则说明该分割线取的不对，应当将<code>i</code>向左移动。  </p>
+<script type="math/tex; mode=display">
+\begin{align*}
+&a\quad b\quad c\quad|\quad d \\
+&e\quad|\quad f\quad g\quad h\quad i\quad j
+\end{align*}</script><p>反之，如果<code>nums1[i-1]$$\le$$nums2[j]</code>，则说明<code>i</code>可能还可以往右移动。  </p>
+<p>那么怎么移动呢？当然是通过二分查找来寻找最佳的移动目的地了。<br>我们将上面的例子稍微写长一点，这样看着更清楚。对于下面的两个数组：</p>
+<script type="math/tex; mode=display">
+\begin{align*}
+&\boxed{1\quad 3\quad 5\quad 7\quad 9\quad 11\quad 13}\\
+&\;2\quad 4\quad 10\quad 11\quad 12\quad 13\quad 14\quad 16\quad 18
+\end{align*}</script><p>我们来考虑<code>i</code>的位置。那么<code>i</code>首先可以选择的区间应该是$[0,len1]$的闭区间。然后进行二分查找，得到<code>i=4</code>，由此<code>j=(len1+len2+1)/2-i=4</code>，所以分割线如下：</p>
+<script type="math/tex; mode=display">
+\begin{align}
+&1\quad 3\quad 5\quad 7\quad|\quad 9\quad 11\quad 13\\
+&2\quad 4\quad 10\quad 11\quad|\quad 12\quad 13\quad 14\quad 16\quad 18
+\end{align}</script><p>此时<code>nums1[i-1]$$\le$$nums2[j]</code>是满足的（$7&lt;12$)，因此，<code>i</code>可以继续往右移动。所以可移动的区间是：  </p>
+<script type="math/tex; mode=display">
+\begin{align*}
+&1\quad 3\quad 5\quad 7\quad\boxed{ 9\quad 11\quad 13}\\
+&2\quad 4\quad 10\quad 11\quad 12\quad 13\quad 14\quad 16\quad 18
+\end{align*}</script><p>再次二分查找，跳跃到这里：  </p>
+<script type="math/tex; mode=display">
+\begin{align*}
+&1\quad 3\quad 5\quad 7\quad 9\quad 11\quad|\quad 13\\
+&2\quad 4\quad|\quad 10\quad 11\quad 12\quad 13\quad 14\quad 16\quad 18
+\end{align*}</script><p>也即<code>i=6</code>而<code>j=2</code>。此时<code>nums1[i-1]$$\le$$nums2[j]</code>是不满足的（$11&gt;10$)，因此需要将<code>i</code>向左调整，可调整的区间为：</p>
+<script type="math/tex; mode=display">
+\begin{align*}
+&1\quad 3\quad 5\quad 7\quad\boxed{ 9\quad 11}\quad 13\\
+&2\quad 4\quad 10\quad 11\quad 12\quad 13\quad 14\quad 16\quad 18
+\end{align*}</script><p>第3次二分查找，跳跃到这里：  </p>
+<script type="math/tex; mode=display">
+\begin{align*}
+&1\quad 3\quad 5\quad 7\quad 9\quad|\quad 11\quad 13\\
+&2\quad 4\quad 10\quad|\quad 11\quad 12\quad 13\quad 14\quad 16\quad 18
+\end{align*}</script><p>也即<code>i=5</code>而<code>j=3</code>，此时<code>nums1[i-1]$$\le$$nums2[j]</code>是满足的（$9&lt;11$)，因此，<code>i</code>可以继续往右移动。所以可移动的区间是：  </p>
+<script type="math/tex; mode=display">
+\begin{align*}
+&1\quad 3\quad 5\quad 7\quad 9\quad \boxed{11}\quad 13\\
+&2\quad 4\quad 10\quad 11\quad 12\quad 13\quad 14\quad 16\quad 18
+\end{align*}</script><p>我们发现，此时的<code>i</code>可移动区间里，只有11这一个元素了。所以此时二分查找可以认为已经结束了。因此，最后一次的分割线就是最终的分割线。<br>所以中位数在这个例子中是：</p>
+<script type="math/tex; mode=display">median=\frac{\max(0,10)+\min(11,11)}{2}=\frac{10+11}{2}=10.5.</script><h1 id="解题"><span class="post-title-index">3. </span><a href="#解题" class="headerlink" title="解题"></a>解题</h1><h2 id="准备"><span class="post-title-index">3.1. </span><a href="#准备" class="headerlink" title="准备"></a>准备</h2><p>首先先对数据进行处理，由于<code>i</code>和<code>j</code>知道一个就可以计算出另外一个，而我们始终只对其中一个数组进行二分查找，所以不妨始终只对短的那个进行。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(nums1.length&gt;nums2.length)&#123;</span><br><span class="line">  <span class="keyword">int</span>[] t=nums1;</span><br><span class="line">  nums1=nums2;</span><br><span class="line">  nums2=t;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>然后取若干变量, <code>len1</code>和<code>len2</code>是两个数组的长度的别名，<code>left</code>和<code>right</code>是<code>i</code>的位置（也就是<code>nums1</code>数组中分割线位置）可供二分查找的范围，<code>totalLeft</code>是两个数组中分割线左侧所有元素的个数，届时<code>j=totalLeft-i</code>：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//short for array's length</span></span><br><span class="line"><span class="keyword">int</span> len1=nums1.length;</span><br><span class="line"><span class="keyword">int</span> len2=nums2.length;</span><br><span class="line"><span class="comment">//i's left and right boundary</span></span><br><span class="line"><span class="keyword">int</span> left=<span class="number">0</span>, right=len1;</span><br><span class="line"><span class="comment">//count of all numbers on the left side of split line </span></span><br><span class="line"><span class="keyword">int</span> totalLeft=(len1+len2+<span class="number">1</span>)/<span class="number">2</span>;</span><br></pre></td></tr></table></figure></p>
+<h2 id="二分查找"><span class="post-title-index">3.2. </span><a href="#二分查找" class="headerlink" title="二分查找"></a>二分查找</h2><p>接下来就开始二分查找了：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span>(left&lt;right)&#123;</span><br><span class="line">  <span class="keyword">int</span> i=left+(right-left+<span class="number">1</span>)/<span class="number">2</span>;</span><br><span class="line">  <span class="keyword">int</span> j=totalLeft-i;</span><br><span class="line">  <span class="keyword">if</span>(nums1[i-<span class="number">1</span>]&gt;nums2[j])&#123;</span><br><span class="line">    right=i-<span class="number">1</span>;</span><br><span class="line">  &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">    left=i;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>这里需要注意一下，原本的写法应该是<code>int i=left+(right-left)/2;</code>，由于<code>left$$&lt;$$right</code>在循环体内恒成立，所以<code>(right-left)/2</code>的最小值为0。则当<code>left=0</code>时，<code>i</code>可能为0，则<code>nums[i-1]</code>可能会数组越界，则此时还需要去进行数组下表越界判断，太麻烦了。同时，一个更大的隐患是可能会出现死循环。我们用下面这样一个例子：</p>
+<blockquote>
+<p>nums1 = [1,2,3,4]<br>nums2 = [6,7,8,9,10]  </p>
+</blockquote>
+<p>首先定边界，<code>left=0, right=2</code></p>
+<script type="math/tex; mode=display">
+\begin{align*}
+&\boxed{1\quad 2}\\
+&\;6\quad 7\quad 8\quad 9\quad 10
+\end{align*}</script><p>第一轮二分查找，<code>i=left+(right-left)/2=0+(2-0)/2=1</code>而<code>j=totalLeft-i=4-2=3</code>。也即：</p>
+<script type="math/tex; mode=display">
+\begin{align*}
+&1\quad|\quad 2\\
+&6\quad 7\quad 8\quad|\quad 9\quad 10
+\end{align*}</script><p>此时判断<code>nums1[i-1]&gt;nums2[j]) = false</code> （即<code>2&gt;7=false</code>），走<code>else</code>的分支，得到<code>left=i=1</code>而<code>right=2</code>保持不变：</p>
+<script type="math/tex; mode=display">
+\begin{align*}
+&1\quad \boxed{2}\\
+&6\quad \;7\quad 8\quad 9\quad 10
+\end{align*}</script><p>然后进行第二轮二分查找，<code>i=left+(right-left)/2=1+(2-1)/2=1</code>而<code>j=totalLeft-i=4-2=3</code>。也即：</p>
+<script type="math/tex; mode=display">
+\begin{align*}
+&1\quad|\quad 2\\
+&6\quad 7\quad 8\quad|\quad 9\quad 10
+\end{align*}</script><p>发现和第一轮二分查找的结果是一样的，也即进入了死循环。  </p>
+<p>解决这个问题的办法就是让<code>i</code>强制移动，所以<code>int i=left+(right-left+1)/2;</code>，这里由于<code>right</code>必定大于<code>left</code>，所以<code>right-left+1$$\ge$$2</code>，所以<code>i</code>一定会发生变化。</p>
+<h2 id="求值"><span class="post-title-index">3.3. </span><a href="#求值" class="headerlink" title="求值"></a>求值</h2><p>最终的中位数，一定出现在分割线的两侧。根据前面的公式：</p>
+<script type="math/tex; mode=display">
+\begin{equation*}
+median=\left\{
+\begin{aligned}
+& \max(nums1a,\,nums2a), & &(len1+len2)\in odd \\
+& \frac{\max(nums1a,\,nums2a)+\min(nums1b,\,nums2b)}{2}, & &(len1+len2)\in even \\
+\end{aligned}
+\right.
+\end{equation*}</script><p>有：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> nums1Split=left;</span><br><span class="line"><span class="keyword">int</span> nums2Split=totalLeft-left;</span><br><span class="line"><span class="keyword">int</span> nums1a=nums1Split&gt;<span class="number">0</span>?nums1[nums1Split-<span class="number">1</span>]:Integer.MIN_VALUE;</span><br><span class="line"><span class="keyword">int</span> nums1b=nums1Split&lt;len1?nums1[nums1Split]:Integer.MAX_VALUE;</span><br><span class="line"><span class="keyword">int</span> nums2a=nums2Split&gt;<span class="number">0</span>?nums2[nums2Split-<span class="number">1</span>]:Integer.MIN_VALUE;</span><br><span class="line"><span class="keyword">int</span> nums2b=nums2Split&lt;len2?nums2[nums2Split]:Integer.MAX_VALUE;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span>((len1+len2)%<span class="number">2</span>==<span class="number">0</span>)&#123;</span><br><span class="line">    <span class="keyword">return</span> (Integer.max(nums1a, nums2a)+Integer.min(nums1b, nums2b))/<span class="number">2.0</span>;</span><br><span class="line">&#125;<span class="keyword">else</span>&#123;</span><br><span class="line">    <span class="keyword">return</span> Integer.max(nums1a, nums2a);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="完整代码"><span class="post-title-index">3.4. </span><a href="#完整代码" class="headerlink" title="完整代码"></a>完整代码</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span></span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">double</span> <span class="title">findMedianSortedArrays</span><span class="params">(<span class="keyword">int</span>[] nums1, <span class="keyword">int</span>[] nums2)</span></span>&#123;</span><br><span class="line">        <span class="comment">//make nums1.length&lt;=nums2.length</span></span><br><span class="line">        <span class="keyword">if</span>(nums1.length&gt;nums2.length)&#123;</span><br><span class="line">            <span class="keyword">int</span>[] t=nums1;</span><br><span class="line">            nums1=nums2;</span><br><span class="line">            nums2=t;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">int</span> len1=nums1.length;</span><br><span class="line">        <span class="keyword">int</span> len2=nums2.length;</span><br><span class="line">        <span class="comment">//(10+9+1)/2 == (10+10)/2 == total count of left numbers</span></span><br><span class="line">        <span class="keyword">int</span> totalLeft=(len1+len2+<span class="number">1</span>)/<span class="number">2</span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">//range [left, right] is the probable split position in nums1</span></span><br><span class="line">        <span class="comment">//the largest range is [0, len1].</span></span><br><span class="line">        <span class="keyword">int</span> left=<span class="number">0</span>; <span class="comment">//of nums1</span></span><br><span class="line">        <span class="keyword">int</span> right=len1; <span class="comment">// of nums1 either</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">//assign i as 1st right index of the split line in nums1</span></span><br><span class="line">        <span class="comment">//assign j as 1st right index of the split line in nums2</span></span><br><span class="line">        <span class="comment">//i+j==totalLeft</span></span><br><span class="line">        <span class="comment">//  2   4   6 | 15</span></span><br><span class="line">        <span class="comment">//               i=3</span></span><br><span class="line">        <span class="comment">//  1 | 7   8   10   17</span></span><br><span class="line">        <span class="comment">//      j=1</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">//binary search the probable position of i and j</span></span><br><span class="line">        <span class="keyword">while</span>(left&lt;right)&#123;</span><br><span class="line">            <span class="comment">//binary select</span></span><br><span class="line">            <span class="keyword">int</span> i=left+(right-left+<span class="number">1</span>)/<span class="number">2</span>; </span><br><span class="line">            <span class="keyword">int</span> j=totalLeft-i;</span><br><span class="line">            <span class="comment">//if left side of split line in nums1</span></span><br><span class="line">            <span class="comment">//is not strickly less than </span></span><br><span class="line">            <span class="comment">//right side of split line in nums2</span></span><br><span class="line">            <span class="keyword">if</span>(nums1[i-<span class="number">1</span>]&gt;nums2[j])&#123;</span><br><span class="line">                <span class="comment">//split position must in range [0, i)</span></span><br><span class="line">                right=i-<span class="number">1</span>;</span><br><span class="line">            &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                <span class="comment">//split position must in range [i, len1]</span></span><br><span class="line">                left=i;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">//loop terminates when left meets right</span></span><br><span class="line">        <span class="comment">//at this time, the median should be </span></span><br><span class="line">        <span class="comment">//in 4 numbers at the both side of both split line</span></span><br><span class="line">        <span class="keyword">int</span> nums1Split=left;</span><br><span class="line">        <span class="keyword">int</span> nums2Split=totalLeft-left;</span><br><span class="line">        <span class="keyword">int</span> nums1a=nums1Split&gt;<span class="number">0</span>?nums1[nums1Split-<span class="number">1</span>]:Integer.MIN_VALUE;</span><br><span class="line">        <span class="keyword">int</span> nums1b=nums1Split&lt;len1?nums1[nums1Split]:Integer.MAX_VALUE;</span><br><span class="line">        <span class="keyword">int</span> nums2a=nums2Split&gt;<span class="number">0</span>?nums2[nums2Split-<span class="number">1</span>]:Integer.MIN_VALUE;</span><br><span class="line">        <span class="keyword">int</span> nums2b=nums2Split&lt;len2?nums2[nums2Split]:Integer.MAX_VALUE;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>((len1+len2)%<span class="number">2</span>==<span class="number">0</span>)&#123;</span><br><span class="line">            <span class="keyword">return</span> (Integer.max(nums1a, nums2a)+Integer.min(nums1b, nums2b))/<span class="number">2.0</span>;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            <span class="keyword">return</span> Integer.max(nums1a, nums2a);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="复杂度分析"><span class="post-title-index">4. </span><a href="#复杂度分析" class="headerlink" title="复杂度分析"></a>复杂度分析</h1><p>由于我们始终是在长度较小的那个数组中进行二分查找，所以：<br>时间复杂度为$O(\log(\min(n,m))$，其中n和m为两个数组的大小。<br>空间复杂度为$O(1)$，因为只额外用了常数的空间，没有使用递归等手法。</p>
 
     </div>
 
@@ -338,7 +427,7 @@ median=\left\{
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#题干"><span class="nav-text">1. 题干</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分析"><span class="nav-text">2. 分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#基础概念"><span class="nav-text">2.1. 基础概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#回到原题"><span class="nav-text">2.2. 回到原题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#找中位数"><span class="nav-text">2.3. 找中位数</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#题干"><span class="nav-text">1. 题干</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分析"><span class="nav-text">2. 分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#基础概念"><span class="nav-text">2.1. 基础概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#回到原题"><span class="nav-text">2.2. 回到原题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#找分割线"><span class="nav-text">2.3. 找分割线</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#解题"><span class="nav-text">3. 解题</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#准备"><span class="nav-text">3.1. 准备</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#二分查找"><span class="nav-text">3.2. 二分查找</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#求值"><span class="nav-text">3.3. 求值</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#完整代码"><span class="nav-text">3.4. 完整代码</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#复杂度分析"><span class="nav-text">4. 复杂度分析</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
