@@ -208,7 +208,7 @@ links:
 toc:
   enable: true
   # Automatically add list number to toc.
-  number: true
+  number: false
   # If true, all words will placed on next lines if header width longer then sidebar width.
   wrap: false
   # If true, all level of TOC in a post will be displayed, rather than the activated part of it.
@@ -711,7 +711,7 @@ firestore:
 # Show Views / Visitors of the website / page with busuanzi.
 # Get more information on http://ibruce.info/2015/04/04/busuanzi
 busuanzi_count:
-  enable: false
+  enable: true
   total_visitors: true
   total_visitors_icon: fa fa-user
   total_views: true
@@ -813,7 +813,7 @@ pdf:
 mermaid:
   enable: true
   # Available themes: default | dark | forest | neutral
-  theme: forest
+  theme: default
   cdn: //cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js
 
 # ---------------------------------------------------------------
