@@ -20,22 +20,22 @@
     var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="在写hexo的md时，如果要预览文章，要么是通过hexo s开启一个服务，在浏览器中本地浏览，要么就直接通过hexo d -g发布到服务器上。前者总是占用着本地资源，而且三天两头才写一篇文章的话，很容易会忘记首先要打开hexo s；后者的话，就更麻烦了。为了解决这个问题，在VS Code的插件市场中苦苦寻觅，终于找到了一个还算不错的办法。">
+  <meta name="description" content="题干给定一个字符串，请你找出其中不含有重复字符的 最长子串 的长度。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="在VS Code中使用Hexo的预览插件">
-<meta property="og:url" content="http://yoursite.com/2020/08/11/%E5%9C%A8VsCode%E4%B8%AD%E4%BD%BF%E7%94%A8Hexo%E7%9A%84%E9%A2%84%E8%A7%88%E6%8F%92%E4%BB%B6/index.html">
+<meta property="og:title" content="LC-0003-无重复字符的最长子串">
+<meta property="og:url" content="http://yoursite.com/2020/07/31/LC-0003-LengthOfLongestSubstring/index.html">
 <meta property="og:site_name" content="吴迪小站">
-<meta property="og:description" content="在写hexo的md时，如果要预览文章，要么是通过hexo s开启一个服务，在浏览器中本地浏览，要么就直接通过hexo d -g发布到服务器上。前者总是占用着本地资源，而且三天两头才写一篇文章的话，很容易会忘记首先要打开hexo s；后者的话，就更麻烦了。为了解决这个问题，在VS Code的插件市场中苦苦寻觅，终于找到了一个还算不错的办法。">
+<meta property="og:description" content="题干给定一个字符串，请你找出其中不含有重复字符的 最长子串 的长度。">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2020-08-11T05:18:45.000Z">
-<meta property="article:modified_time" content="2020-08-11T06:08:39.841Z">
+<meta property="article:published_time" content="2020-07-31T07:15:35.000Z">
+<meta property="article:modified_time" content="2020-08-12T04:54:43.073Z">
 <meta property="article:author" content="吴迪">
-<meta property="article:tag" content="建站">
-<meta property="article:tag" content="hexo">
-<meta property="article:tag" content="插件">
+<meta property="article:tag" content="LeetCode">
+<meta property="article:tag" content="Two Pointer">
+<meta property="article:tag" content="Sliding Window">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://yoursite.com/2020/08/11/%E5%9C%A8VsCode%E4%B8%AD%E4%BD%BF%E7%94%A8Hexo%E7%9A%84%E9%A2%84%E8%A7%88%E6%8F%92%E4%BB%B6/">
+<link rel="canonical" href="http://yoursite.com/2020/07/31/LC-0003-LengthOfLongestSubstring/">
 
 
 <script id="page-configurations">
@@ -48,7 +48,7 @@
   };
 </script>
 
-  <title>在VS Code中使用Hexo的预览插件 | 吴迪小站</title>
+  <title>LC-0003-无重复字符的最长子串 | 吴迪小站</title>
   
 
 
@@ -163,7 +163,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/08/11/%E5%9C%A8VsCode%E4%B8%AD%E4%BD%BF%E7%94%A8Hexo%E7%9A%84%E9%A2%84%E8%A7%88%E6%8F%92%E4%BB%B6/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/31/LC-0003-LengthOfLongestSubstring/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg?raw=true">
@@ -176,7 +176,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          在VS Code中使用Hexo的预览插件
+          LC-0003-无重复字符的最长子串
         </h1>
 
         <div class="post-meta">
@@ -185,17 +185,23 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2020-08-11 13:18:45 / 修改时间：14:08:39" itemprop="dateCreated datePublished" datetime="2020-08-11T13:18:45+08:00">2020-08-11</time>
+              <time title="创建时间：2020-07-31 15:15:35" itemprop="dateCreated datePublished" datetime="2020-07-31T15:15:35+08:00">2020-07-31</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-08-12 12:54:43" itemprop="dateModified" datetime="2020-08-12T12:54:43+08:00">2020-08-12</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E7%BD%91%E7%AB%99%E5%BB%BA%E8%AE%BE/" itemprop="url" rel="index"><span itemprop="name">网站建设</span></a>
+                  <a href="/categories/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
                 </span>
             </span>
 
@@ -217,25 +223,32 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>在写hexo的md时，如果要预览文章，要么是通过<code>hexo s</code>开启一个服务，在浏览器中本地浏览，要么就直接通过<code>hexo d -g</code>发布到服务器上。前者总是占用着本地资源，而且三天两头才写一篇文章的话，很容易会忘记首先要打开<code>hexo s</code>；后者的话，就更麻烦了。为了解决这个问题，在VS Code的插件市场中苦苦寻觅，终于找到了一个还算不错的办法。<br><a id="more"></a><br>之前一直在搜索的是hexo的插件，后来转念一想，我要在本地预览的无非是markdown文件，为什么不能直接使用markdown preview类型的插件呢。我的要求很明确：</p>
+        <h1 id="题干"><span class="post-title-index">1. </span><a href="#题干" class="headerlink" title="题干"></a>题干</h1><p>给定一个字符串，请你找出其中不含有重复字符的 最长子串 的长度。<br><a id="more"></a><br>示例 1:</p>
+<blockquote>
+<p>输入: “abcabcbb”<br>输出: 3<br>解释: 因为无重复字符的最长子串是 “abc”，所以其长度为 3。 </p>
+</blockquote>
+<p>示例 2:</p>
+<blockquote>
+<p>输入: “bbbbb”<br>输出: 1<br>解释: 因为无重复字符的最长子串是 “b”，所以其长度为 1。  </p>
+</blockquote>
+<p>示例 3:</p>
+<blockquote>
+<p>输入: “pwwkew”<br>输出: 3<br>解释: 因为无重复字符的最长子串是 “wke”，所以其长度为 3。<br>请注意，你的答案必须是 子串 的长度，”pwke” 是一个子序列，不是子串。</p>
+</blockquote>
+<h1 id="分析"><span class="post-title-index">2. </span><a href="#分析" class="headerlink" title="分析"></a>分析</h1><p>此题所需要的，是寻找一个子串，判断其是否含有重复字符。如果含有重复字符，则换下一个子串；否则判断当前子串的长度是否超过目前已经找到的满足题意的子串的长度。所以，我们需要确定的，是如何去取子串，并快速判断该子串中知否存在重复字符。<br>取字符串时，采用滑动窗口的方式。窗口有两个参数，一个是位置，一个是大小，也即窗宽和窗位。我们使用<code>start</code>和<code>end</code>两个指针来代表这个滑动窗口即可。<br>快速判断是否存在重复字符简单，利用Hash Table，key记录字符，value记录最后一次出现该字符的位置。只要<code>str[end]</code>最后一次出现的位置在start之前，就说明在<code>str[start,end]</code>之间出现了重复的字符。</p>
+<p>比如一个带判断的字符串$abcdcefg$，我们选择一个子串$\boxed{a}bcdcefg$，其中是没有重复字符的，那么就向右多选择一个字符。  </p>
+<p>得到$\boxed{ab}cdcefg$，仍然没有重复字符，此时最大无重复字符子串长度为2。则再向右多选则一个。  </p>
+<p>得到$\boxed{abc}dcefg$，仍然没有重复字符，此时最大无重复字符子串长度为3。则再向右多选择一个。 </p>
+<p>得到$\boxed{abcd}cefg$，仍然没有重复字符，此时最大无重复字符子串长度为4。则再向右多选择一个。  </p>
+<p>得到$\boxed{abcdc}efg$，此时有了重复字符。那么接下来有两种选择子串的方式：</p>
 <ul>
-<li>实时预览，或通过最简单的命令异步预览  </li>
-<li>支持主要的markdown语法，最起码不影响文章结构  </li>
-<li>支持mathjax  </li>
-<li>pandoc渲染支持，因为hexo我已经换成用pandoc进行render了，希望本地预览与线上实际效果是一致的</li>
+<li>方法一：回头重新选择：<br>选择$a\boxed{bc}dcefg$。此种选择方法其实之前在判断$\boxed{abc}dcefg$时已经判断过了，一定是没有重复字符的。所以这种方法比较浪费时间。这样的时间复杂度为$O(n^2)$</li>
+<li>方法二：仅移动左边界：<br>选择$a\boxed{bcd}cefg$。没有重复的，然后右边界移动，得到$a\boxed{bcdc}efg$。有重复的，左边界再移动，$ab\boxed{cdc}efg$。有重复的，左边界再移动，$abc\boxed{dc}efg$。没有重复的了。以此类推，这样的时间复杂度最坏为$O(2n)=O(n)$，也即最坏情况下（如$aaaaa$）右边界移动一下，左边界移动一下。</li>
+<li>方法三：双边界都移动：<br>因为如果需要判断$\boxed{abcdc}efg$，则在此之前其无重复字符的子串的最大长度一定至少是4了。只需要判断长度为5或更大的即可。因此将整个框子向右移动一次：$a\boxed{bcdce}fg$。发现其中有重复字符。那如果左边界直接跳过重复字符呢？<br>由于刚刚的重复字符是c，前一个重复字符位于2处，所以左边界直接跳至3，同时右边界移动1个位置，得到：$abc\boxed{dce}fg$。然后右边界逐步向右。<br>注意，右侧只能一步一步往前走，如果右边界向右跳的话，就无法往Hash Table中添加字符信息了。另外，如果在Hash Table中存储字符所在位置的后一个位置的话，左边界在跳跃时，就不需要再+1了。</li>
 </ul>
-<p>于是在vs code的extension marketplace中以markdown preview为关键词进行搜索，很快一个基本符合我要求的插件就引入眼帘：markdown-preview-enhanced<br>VS code的插件安装很简单，点击install按钮即可。安装完成后，打开该插件的settings。</p>
-<h1 id="自动打开预览"><span class="post-title-index">1. </span><a href="#自动打开预览" class="headerlink" title="自动打开预览"></a>自动打开预览</h1><p>首先需要勾选下面这个选项，这样当打开md文件时，将会自动开启预览窗口。  </p>
-<ul>
-<li>[x] Automatically show preview of markdown being edited.<br>当然要是不嫌麻烦，也可以直接修改vs code的settings.json文件<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.automaticallyShowPreviewOfMarkdownBeingEdited": true</span><br></pre></td></tr></table></figure>
-这时，就可以打开任意md文件，以启动预览窗口。（可能需要重启vs code）</li>
-</ul>
-<h1 id="调整renderer"><span class="post-title-index">2. </span><a href="#调整renderer" class="headerlink" title="调整renderer"></a>调整renderer</h1><p>然后根据数学公式使用的渲染器考量是否需要修改。找到Math Rendering Options，默认采用的是KaTex。由于我Hexo中使用的是MathJax，因此这里改成了MathJax。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.mathRenderingOption": "MathJax"</span><br></pre></td></tr></table></figure></p>
-<h1 id="替换renderer为pandoc"><span class="post-title-index">3. </span><a href="#替换renderer为pandoc" class="headerlink" title="替换renderer为pandoc"></a>替换renderer为pandoc</h1><p>这里需要修改1~2个地方。首先将设置拉到最下面，倒数第3个选项，勾选Use Pandoc Parser，以替代原本的markdown-it。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.pandocPath": "pandoc"</span><br></pre></td></tr></table></figure><br>然后确认Pandoc Path是否正确。如果你的Pandoc是全局安装的，那么这里直接写”pandoc”就可以了。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.pandocPath": "pandoc"</span><br></pre></td></tr></table></figure></p>
-<h1 id="调整界面样式"><span class="post-title-index">4. </span><a href="#调整界面样式" class="headerlink" title="调整界面样式"></a>调整界面样式</h1><p>接着，打开任意一个md文件，在预览中观察是否有不舒服的地方（比如我的vs code主题是dark的，但是markdown preview仍然是亮色主题）。这里有几个可以修改的。  </p>
-<h2 id="主要主题"><span class="post-title-index">4.1. </span><a href="#主要主题" class="headerlink" title="主要主题"></a>主要主题</h2><p>在pandocPath设置下一个，可以修改Preview Theme。这里我选用的是atom-dark：<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.previewTheme": "atom-dark.css"</span><br></pre></td></tr></table></figure><br>当然，要是有能力的话，也可以直接修改该css文件的内容（我是真不会），该文件位于：<code>~/.vscode/extensions/shd101wyy.markdown-preview-enhanced-0.5.12/node_modules/@shd101wyy/mume/styles/prism_theme/src</code>。插件版本可能略有差异，如果确定要去修改的话，自己注意好路径。</p>
-<h2 id="代码块主题"><span class="post-title-index">4.2. </span><a href="#代码块主题" class="headerlink" title="代码块主题"></a>代码块主题</h2><p>修改过Preview Theme后，发现使用```包裹起来的代码块背景颜色仍然是白色的，为此，去修改设置。该设置位于插件设置的头部（第6个），Code Block Theme，选择与Preview Theme相协调的配色，或使用auto.css由插件自己选择即可。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.codeBlockTheme": "auto.css"</span><br></pre></td></tr></table></figure></p>
-<h2 id="mermaid主题"><span class="post-title-index">4.3. </span><a href="#mermaid主题" class="headerlink" title="mermaid主题"></a>mermaid主题</h2><p>如果使用了mermaid流程图的话，可以在这里修改其主题配色，位于Math Rendering Option的下一个，Mermaid Theme。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.mermaidTheme": "default"</span><br></pre></td></tr></table></figure></p>
+<h1 id="解题"><span class="post-title-index">3. </span><a href="#解题" class="headerlink" title="解题"></a>解题</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">lengthOfLongestSubstring</span><span class="params">(String s)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(s.isEmpty())&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//minimum answer is 1 letter as a substring.</span></span><br><span class="line">        <span class="keyword">int</span> ans=<span class="number">1</span>;</span><br><span class="line">        <span class="keyword">int</span> start=<span class="number">0</span>, end=<span class="number">0</span>;</span><br><span class="line">        <span class="keyword">int</span> sLen=s.length();</span><br><span class="line">        <span class="comment">//store last character's position. key: character, value: position</span></span><br><span class="line">        HashMap&lt;Character, Integer&gt; map=<span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">        <span class="keyword">while</span>(end&lt;sLen)&#123;</span><br><span class="line">            <span class="keyword">char</span> cEnd=s.charAt(end);</span><br><span class="line">            <span class="keyword">if</span>(map.containsKey(cEnd))&#123;</span><br><span class="line">                <span class="comment">//when find duplicate character, start jump to the position</span></span><br><span class="line">                <span class="comment">//if the position &gt; start</span></span><br><span class="line">                <span class="comment">//or the duplicate character appears before the start (and </span></span><br><span class="line">                <span class="comment">//it means the character str[end] is not duplicated in</span></span><br><span class="line">                <span class="comment">//str[start, end])</span></span><br><span class="line">                start=Integer.max(start, map.get(cEnd));</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//increase end first, and then put(cEnd, end), store</span></span><br><span class="line">            <span class="comment">// the position 1 behind the character</span></span><br><span class="line">            end++;</span><br><span class="line">            map.put(cEnd, end);</span><br><span class="line">            ans=Integer.max(end-start, ans);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> ans;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="复杂度分析"><span class="post-title-index">4. </span><a href="#复杂度分析" class="headerlink" title="复杂度分析"></a>复杂度分析</h1><p>时间上，由于end一直在向右移动，未曾停歇，所以一共执行了n次。而每一次中，移动start、插入Hash Table、查询Hash Table、计算ans都是$O(1)$的，因此时间复杂度为$O(n)$。  </p>
+<p>空间上，由于使用了Hash Table，并且每一个不同的字符都会存储在Hash Table中，所以空间复杂度为$O(n)$。</p>
 
     </div>
 
@@ -245,9 +258,9 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/%E5%BB%BA%E7%AB%99/" rel="tag"># 建站</a>
-              <a href="/tags/hexo/" rel="tag"># hexo</a>
-              <a href="/tags/%E6%8F%92%E4%BB%B6/" rel="tag"># 插件</a>
+              <a href="/tags/LeetCode/" rel="tag"># LeetCode</a>
+              <a href="/tags/Two-Pointer/" rel="tag"># Two Pointer</a>
+              <a href="/tags/Sliding-Window/" rel="tag"># Sliding Window</a>
           </div>
 
         
@@ -256,12 +269,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/08/11/%E6%B7%BB%E5%8A%A0%E5%B0%8F%E8%8A%82%E5%8F%B7/" rel="prev" title="添加小节号">
-      <i class="fa fa-chevron-left"></i> 添加小节号
+    <a href="/2020/07/31/LC-0002-AddTwoNumbers/" rel="prev" title="LC-0002-两数相加">
+      <i class="fa fa-chevron-left"></i> LC-0002-两数相加
     </a></div>
       <div class="post-nav-item">
-    <a href="/2020/08/12/LC-0005-LongestPalindrome/" rel="next" title="LC-0005-最长回文子串">
-      LC-0005-最长回文子串 <i class="fa fa-chevron-right"></i>
+    <a href="/2020/08/04/LC-0004-FindMedianSortedArrays/" rel="next" title="LC-0004-寻找两个正序数组的中位数">
+      LC-0004-寻找两个正序数组的中位数 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -321,7 +334,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#自动打开预览"><span class="nav-text">1. 自动打开预览</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#调整renderer"><span class="nav-text">2. 调整renderer</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#替换renderer为pandoc"><span class="nav-text">3. 替换renderer为pandoc</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#调整界面样式"><span class="nav-text">4. 调整界面样式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#主要主题"><span class="nav-text">4.1. 主要主题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#代码块主题"><span class="nav-text">4.2. 代码块主题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mermaid主题"><span class="nav-text">4.3. mermaid主题</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#题干"><span class="nav-text">1. 题干</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分析"><span class="nav-text">2. 分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#解题"><span class="nav-text">3. 解题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#复杂度分析"><span class="nav-text">4. 复杂度分析</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

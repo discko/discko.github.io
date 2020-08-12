@@ -20,21 +20,22 @@
     var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="题干给定一个整数数组 nums 和一个目标值 target，请你在该数组中找出和为目标值的那 两个 整数，并返回他们的数组下标。你可以假设每种输入只会对应一个答案。但是，数组中同一个元素不能使用两遍。">
+  <meta name="description" content="在写hexo的md时，如果要预览文章，要么是通过hexo s开启一个服务，在浏览器中本地浏览，要么就直接通过hexo d -g发布到服务器上。前者总是占用着本地资源，而且三天两头才写一篇文章的话，很容易会忘记首先要打开hexo s；后者的话，就更麻烦了。为了解决这个问题，在VS Code的插件市场中苦苦寻觅，终于找到了一个还算不错的办法。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="LC-0001-两数之和">
-<meta property="og:url" content="http://yoursite.com/2020/07/31/LC-0001-%E4%B8%A4%E6%95%B0%E4%B9%8B%E5%92%8C/index.html">
+<meta property="og:title" content="在VS Code中使用Hexo的预览插件">
+<meta property="og:url" content="http://yoursite.com/2020/08/11/BuildSite-UseHexoExtensionInVsCode/index.html">
 <meta property="og:site_name" content="吴迪小站">
-<meta property="og:description" content="题干给定一个整数数组 nums 和一个目标值 target，请你在该数组中找出和为目标值的那 两个 整数，并返回他们的数组下标。你可以假设每种输入只会对应一个答案。但是，数组中同一个元素不能使用两遍。">
+<meta property="og:description" content="在写hexo的md时，如果要预览文章，要么是通过hexo s开启一个服务，在浏览器中本地浏览，要么就直接通过hexo d -g发布到服务器上。前者总是占用着本地资源，而且三天两头才写一篇文章的话，很容易会忘记首先要打开hexo s；后者的话，就更麻烦了。为了解决这个问题，在VS Code的插件市场中苦苦寻觅，终于找到了一个还算不错的办法。">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2020-07-31T02:24:18.000Z">
-<meta property="article:modified_time" content="2020-07-31T06:40:45.164Z">
+<meta property="article:published_time" content="2020-08-11T05:18:45.000Z">
+<meta property="article:modified_time" content="2020-08-12T04:56:34.979Z">
 <meta property="article:author" content="吴迪">
-<meta property="article:tag" content="LeetCode">
-<meta property="article:tag" content="HashTable">
+<meta property="article:tag" content="建站">
+<meta property="article:tag" content="hexo">
+<meta property="article:tag" content="插件">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://yoursite.com/2020/07/31/LC-0001-%E4%B8%A4%E6%95%B0%E4%B9%8B%E5%92%8C/">
+<link rel="canonical" href="http://yoursite.com/2020/08/11/BuildSite-UseHexoExtensionInVsCode/">
 
 
 <script id="page-configurations">
@@ -47,7 +48,7 @@
   };
 </script>
 
-  <title>LC-0001-两数之和 | 吴迪小站</title>
+  <title>在VS Code中使用Hexo的预览插件 | 吴迪小站</title>
   
 
 
@@ -162,7 +163,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/31/LC-0001-%E4%B8%A4%E6%95%B0%E4%B9%8B%E5%92%8C/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/08/11/BuildSite-UseHexoExtensionInVsCode/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg?raw=true">
@@ -175,7 +176,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          LC-0001-两数之和
+          在VS Code中使用Hexo的预览插件
         </h1>
 
         <div class="post-meta">
@@ -184,17 +185,23 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2020-07-31 10:24:18 / 修改时间：14:40:45" itemprop="dateCreated datePublished" datetime="2020-07-31T10:24:18+08:00">2020-07-31</time>
+              <time title="创建时间：2020-08-11 13:18:45" itemprop="dateCreated datePublished" datetime="2020-08-11T13:18:45+08:00">2020-08-11</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-08-12 12:56:34" itemprop="dateModified" datetime="2020-08-12T12:56:34+08:00">2020-08-12</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                  <a href="/categories/%E7%BD%91%E7%AB%99%E5%BB%BA%E8%AE%BE/" itemprop="url" rel="index"><span itemprop="name">网站建设</span></a>
                 </span>
             </span>
 
@@ -216,19 +223,25 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="题干"><a href="#题干" class="headerlink" title="题干"></a>题干</h1><p>给定一个整数数组 nums 和一个目标值 target，请你在该数组中找出和为目标值的那 两个 整数，并返回他们的数组下标。<br>你可以假设每种输入只会对应一个答案。但是，数组中同一个元素不能使用两遍。<br><a id="more"></a><br>示例：  </p>
-<blockquote>
-<p>输入： nums = [2, 7, 11, 15], target = 9<br>输出： [0, 1]</p>
-</blockquote>
-<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><p>难易程度： ☆<br>这题就算是个热身题了，听说有的人把 「两数之和」 作为刷题或者说算法的入门题，说编程就是「Hellow World」，说刷题就是「两数之和」。  </p>
-<p>回到这道题目，对于已知的一个和，我们知道「加数1+加数2=和」，当我们遍历数组的时候，每一次会取到一个加数1，那么加数2=和-加数1。这时候，我们唯一要做的事情就是判断加数2是否存在于这个数组中。而要快速判断元素的存在性，使用$O(1)$时间的Set即可解决。也即将nums数组添加到Set中，然后遍历数组时，判断「和-该数」是否在Set中。  </p>
-<p>但此时可能会遇到一个问题，因为题干中没有表述数组中是否会存在重复的数。比如<code>nums=[2,2,3], target=4</code>这样的例子，如果使用Set去处理，最终的Set中将仅有<code>{2,3}</code>两个元素，显然是无法解决问题的。因此换用哈希表（Hash Table）进行处理。  </p>
-<p>让Hash Table的key记录数组的值，让value记录数组值出现的位置。这样第一次遍历，对于<code>nums=[2,2,3], target=4</code>，即使Hash Table中<code>{key=2, value=0}</code>被<code>{key=2, value=1}</code>覆盖，但从头开始遍历时，通过<code>nums[0]=2</code>从Hash Table中取出的<code>{key=2, value=1}</code>，不是当前的这个2，因此可以可以得到<code>num[0],num[1]</code>这样一组答案。</p>
-<p>此处，我们将「加数1」称为lhs，也即left hand side，「加数2」称为rhs，也即right hand side</p>
-<h1 id="解题"><a href="#解题" class="headerlink" title="解题"></a>解题</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.HashMap;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span>[] twoSum(<span class="keyword">int</span>[] nums, <span class="keyword">int</span> target) &#123;</span><br><span class="line">        HashMap&lt;Integer, Integer&gt; map=<span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">        <span class="comment">//store num and (target-num) as key-value</span></span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;nums.length;++i)&#123;</span><br><span class="line">            map.put(nums[i], i);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//start matching</span></span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> lhsIndex=<span class="number">0</span>;lhsIndex&lt;nums.length;++lhsIndex)&#123;</span><br><span class="line">            Integer rhsIndex=map.getOrDefault(target-nums[lhsIndex], <span class="keyword">null</span>);</span><br><span class="line">            <span class="keyword">if</span>(rhsIndex==<span class="keyword">null</span>||rhsIndex.equals(lhsIndex))&#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> <span class="keyword">int</span>[]&#123;lhsIndex, rhsIndex&#125;;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="keyword">int</span>[<span class="number">2</span>];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>虽然该解法已经是$O(1)$的解法了，但仍然还有可以优化的空间。上面的代码最坏将会遍历数组2次，遍历过程中其实本来就可能发现结果而提前结束。因此，可以一边遍历，一边初始化Hash Table。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//optimized</span></span><br><span class="line"><span class="keyword">import</span> java.util.HashMap;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span>[] twoSum(<span class="keyword">int</span>[] nums, <span class="keyword">int</span> target) &#123;</span><br><span class="line">        HashMap&lt;Integer, Integer&gt; map=<span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> lhsIndex=<span class="number">0</span>;lhsIndex&lt;nums.length;++lhsIndex)&#123;</span><br><span class="line">            Integer rhsIndex=map.getOrDefault(target-nums[lhsIndex], <span class="keyword">null</span>);</span><br><span class="line">            <span class="keyword">if</span>(rhsIndex==<span class="keyword">null</span>)&#123;</span><br><span class="line">                map.put(nums[lhsIndex], lhsIndex);</span><br><span class="line">            &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">new</span> <span class="keyword">int</span>[]&#123;lhsIndex, rhsIndex&#125;;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="keyword">int</span>[<span class="number">2</span>];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<h1 id="复杂度分析"><a href="#复杂度分析" class="headerlink" title="复杂度分析"></a>复杂度分析</h1><p>时间上，最坏情况是到最后一个才找到能够匹配的两个加数。<br>空间上，无额外空间。<br>因此：<br>时间复杂度：$O(n)$  </p>
-<p>空间复杂度：$O(1)$  </p>
+        <p>在写hexo的md时，如果要预览文章，要么是通过<code>hexo s</code>开启一个服务，在浏览器中本地浏览，要么就直接通过<code>hexo d -g</code>发布到服务器上。前者总是占用着本地资源，而且三天两头才写一篇文章的话，很容易会忘记首先要打开<code>hexo s</code>；后者的话，就更麻烦了。为了解决这个问题，在VS Code的插件市场中苦苦寻觅，终于找到了一个还算不错的办法。<br><a id="more"></a><br>之前一直在搜索的是hexo的插件，后来转念一想，我要在本地预览的无非是markdown文件，为什么不能直接使用markdown preview类型的插件呢。我的要求很明确：</p>
+<ul>
+<li>实时预览，或通过最简单的命令异步预览  </li>
+<li>支持主要的markdown语法，最起码不影响文章结构  </li>
+<li>支持mathjax  </li>
+<li>pandoc渲染支持，因为hexo我已经换成用pandoc进行render了，希望本地预览与线上实际效果是一致的</li>
+</ul>
+<p>于是在vs code的extension marketplace中以markdown preview为关键词进行搜索，很快一个基本符合我要求的插件就引入眼帘：markdown-preview-enhanced<br>VS code的插件安装很简单，点击install按钮即可。安装完成后，打开该插件的settings。</p>
+<h1 id="自动打开预览"><span class="post-title-index">1. </span><a href="#自动打开预览" class="headerlink" title="自动打开预览"></a>自动打开预览</h1><p>首先需要勾选下面这个选项，这样当打开md文件时，将会自动开启预览窗口。  </p>
+<ul>
+<li>[x] Automatically show preview of markdown being edited.<br>当然要是不嫌麻烦，也可以直接修改vs code的settings.json文件<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.automaticallyShowPreviewOfMarkdownBeingEdited": true</span><br></pre></td></tr></table></figure>
+这时，就可以打开任意md文件，以启动预览窗口。（可能需要重启vs code）</li>
+</ul>
+<h1 id="调整renderer"><span class="post-title-index">2. </span><a href="#调整renderer" class="headerlink" title="调整renderer"></a>调整renderer</h1><p>然后根据数学公式使用的渲染器考量是否需要修改。找到Math Rendering Options，默认采用的是KaTex。由于我Hexo中使用的是MathJax，因此这里改成了MathJax。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.mathRenderingOption": "MathJax"</span><br></pre></td></tr></table></figure></p>
+<h1 id="替换renderer为pandoc"><span class="post-title-index">3. </span><a href="#替换renderer为pandoc" class="headerlink" title="替换renderer为pandoc"></a>替换renderer为pandoc</h1><p>这里需要修改1~2个地方。首先将设置拉到最下面，倒数第3个选项，勾选Use Pandoc Parser，以替代原本的markdown-it。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.pandocPath": "pandoc"</span><br></pre></td></tr></table></figure><br>然后确认Pandoc Path是否正确。如果你的Pandoc是全局安装的，那么这里直接写”pandoc”就可以了。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.pandocPath": "pandoc"</span><br></pre></td></tr></table></figure></p>
+<h1 id="调整界面样式"><span class="post-title-index">4. </span><a href="#调整界面样式" class="headerlink" title="调整界面样式"></a>调整界面样式</h1><p>接着，打开任意一个md文件，在预览中观察是否有不舒服的地方（比如我的vs code主题是dark的，但是markdown preview仍然是亮色主题）。这里有几个可以修改的。  </p>
+<h2 id="主要主题"><span class="post-title-index">4.1. </span><a href="#主要主题" class="headerlink" title="主要主题"></a>主要主题</h2><p>在pandocPath设置下一个，可以修改Preview Theme。这里我选用的是atom-dark：<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.previewTheme": "atom-dark.css"</span><br></pre></td></tr></table></figure><br>当然，要是有能力的话，也可以直接修改该css文件的内容（我是真不会），该文件位于：<code>~/.vscode/extensions/shd101wyy.markdown-preview-enhanced-0.5.12/node_modules/@shd101wyy/mume/styles/prism_theme/src</code>。插件版本可能略有差异，如果确定要去修改的话，自己注意好路径。</p>
+<h2 id="代码块主题"><span class="post-title-index">4.2. </span><a href="#代码块主题" class="headerlink" title="代码块主题"></a>代码块主题</h2><p>修改过Preview Theme后，发现使用```包裹起来的代码块背景颜色仍然是白色的，为此，去修改设置。该设置位于插件设置的头部（第6个），Code Block Theme，选择与Preview Theme相协调的配色，或使用auto.css由插件自己选择即可。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.codeBlockTheme": "auto.css"</span><br></pre></td></tr></table></figure></p>
+<h2 id="mermaid主题"><span class="post-title-index">4.3. </span><a href="#mermaid主题" class="headerlink" title="mermaid主题"></a>mermaid主题</h2><p>如果使用了mermaid流程图的话，可以在这里修改其主题配色，位于Math Rendering Option的下一个，Mermaid Theme。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.mermaidTheme": "default"</span><br></pre></td></tr></table></figure></p>
 
     </div>
 
@@ -238,8 +251,9 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/LeetCode/" rel="tag"># LeetCode</a>
-              <a href="/tags/HashTable/" rel="tag"># HashTable</a>
+              <a href="/tags/%E5%BB%BA%E7%AB%99/" rel="tag"># 建站</a>
+              <a href="/tags/hexo/" rel="tag"># hexo</a>
+              <a href="/tags/%E6%8F%92%E4%BB%B6/" rel="tag"># 插件</a>
           </div>
 
         
@@ -248,12 +262,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/07/28/BuildSite-Start/" rel="prev" title="建站">
-      <i class="fa fa-chevron-left"></i> 建站
+    <a href="/2020/08/11/BuildSite-AddSectionNumber/" rel="prev" title="添加小节号">
+      <i class="fa fa-chevron-left"></i> 添加小节号
     </a></div>
       <div class="post-nav-item">
-    <a href="/2020/07/31/LC-0002-%E4%B8%A4%E6%95%B0%E7%9B%B8%E5%8A%A0/" rel="next" title="LC-0002-两数相加">
-      LC-0002-两数相加 <i class="fa fa-chevron-right"></i>
+    <a href="/2020/08/12/LC-0005-LongestPalindrome/" rel="next" title="LC-0005-最长回文子串">
+      LC-0005-最长回文子串 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -313,7 +327,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#题干"><span class="nav-text">题干</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分析"><span class="nav-text">分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#解题"><span class="nav-text">解题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#复杂度分析"><span class="nav-text">复杂度分析</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#自动打开预览"><span class="nav-text">1. 自动打开预览</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#调整renderer"><span class="nav-text">2. 调整renderer</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#替换renderer为pandoc"><span class="nav-text">3. 替换renderer为pandoc</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#调整界面样式"><span class="nav-text">4. 调整界面样式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#主要主题"><span class="nav-text">4.1. 主要主题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#代码块主题"><span class="nav-text">4.2. 代码块主题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mermaid主题"><span class="nav-text">4.3. mermaid主题</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
