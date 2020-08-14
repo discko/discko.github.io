@@ -20,22 +20,21 @@
     var CONFIG = {"hostname":"wudi.space","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="题干给定一个字符串，请你找出其中不含有重复字符的 最长子串 的长度。">
+  <meta name="description" content="题干将一个给定字符串根据给定的行数，以从上往下、从左到右进行 Z 字形排列。 比如输入字符串为 “LEETCODEISHIRING” 行数为 3 时，排列如下：123L   C   I   R  E T O E S I I G  E   D   H   N 之后，你的输出需要从左往右逐行读取，产生出一个新的字符串，比如：”LCIRETOESIIGEDHN”。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="LC-0003-无重复字符的最长子串">
-<meta property="og:url" content="http://wudi.space/2020/07/31/LC-0003-LengthOfLongestSubstring/index.html">
+<meta property="og:title" content="LC-0006-Z字形变换">
+<meta property="og:url" content="http://wudi.space/2020/08/13/LC-0006-ZigzagConversion/index.html">
 <meta property="og:site_name" content="吴迪小站">
-<meta property="og:description" content="题干给定一个字符串，请你找出其中不含有重复字符的 最长子串 的长度。">
+<meta property="og:description" content="题干将一个给定字符串根据给定的行数，以从上往下、从左到右进行 Z 字形排列。 比如输入字符串为 “LEETCODEISHIRING” 行数为 3 时，排列如下：123L   C   I   R  E T O E S I I G  E   D   H   N 之后，你的输出需要从左往右逐行读取，产生出一个新的字符串，比如：”LCIRETOESIIGEDHN”。">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2020-07-31T07:15:35.000Z">
-<meta property="article:modified_time" content="2020-08-12T04:54:43.073Z">
+<meta property="article:published_time" content="2020-08-13T01:55:12.000Z">
+<meta property="article:modified_time" content="2020-08-14T08:08:01.033Z">
 <meta property="article:author" content="吴迪">
 <meta property="article:tag" content="LeetCode">
-<meta property="article:tag" content="Two Pointer">
-<meta property="article:tag" content="Sliding Window">
+<meta property="article:tag" content="Simulate">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://wudi.space/2020/07/31/LC-0003-LengthOfLongestSubstring/">
+<link rel="canonical" href="http://wudi.space/2020/08/13/LC-0006-ZigzagConversion/">
 
 
 <script id="page-configurations">
@@ -48,7 +47,7 @@
   };
 </script>
 
-  <title>LC-0003-无重复字符的最长子串 | 吴迪小站</title>
+  <title>LC-0006-Z字形变换 | 吴迪小站</title>
   
 
 
@@ -163,7 +162,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://wudi.space/2020/07/31/LC-0003-LengthOfLongestSubstring/">
+    <link itemprop="mainEntityOfPage" href="http://wudi.space/2020/08/13/LC-0006-ZigzagConversion/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg?raw=true">
@@ -176,7 +175,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          LC-0003-无重复字符的最长子串
+          LC-0006-Z字形变换
         </h1>
 
         <div class="post-meta">
@@ -186,14 +185,14 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2020-07-31 15:15:35" itemprop="dateCreated datePublished" datetime="2020-07-31T15:15:35+08:00">2020-07-31</time>
+              <time title="创建时间：2020-08-13 09:55:12" itemprop="dateCreated datePublished" datetime="2020-08-13T09:55:12+08:00">2020-08-13</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-08-12 12:54:43" itemprop="dateModified" datetime="2020-08-12T12:54:43+08:00">2020-08-12</time>
+                <time title="修改时间：2020-08-14 16:08:01" itemprop="dateModified" datetime="2020-08-14T16:08:01+08:00">2020-08-14</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -223,32 +222,19 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="题干"><span class="post-title-index">1. </span><a href="#题干" class="headerlink" title="题干"></a>题干</h1><p>给定一个字符串，请你找出其中不含有重复字符的 最长子串 的长度。<br><a id="more"></a><br>示例 1:</p>
+        <h1 id="题干"><span class="post-title-index">1. </span><a href="#题干" class="headerlink" title="题干"></a>题干</h1><p>将一个给定字符串根据给定的行数，以从上往下、从左到右进行 Z 字形排列。</p>
+<p>比如输入字符串为 “LEETCODEISHIRING” 行数为 3 时，排列如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">L   C   I   R  </span><br><span class="line">E T O E S I I G  </span><br><span class="line">E   D   H   N</span><br></pre></td></tr></table></figure></p>
+<p>之后，你的输出需要从左往右逐行读取，产生出一个新的字符串，比如：”LCIRETOESIIGEDHN”。<br><a id="more"></a><br>请你实现这个将字符串进行指定行数变换的函数：<br><code>string convert(string s, int numRows);</code><br>示例 1:</p>
 <blockquote>
-<p>输入: “abcabcbb”<br>输出: 3<br>解释: 因为无重复字符的最长子串是 “abc”，所以其长度为 3。 </p>
+<p>输入: s = “LEETCODEISHIRING”, numRows = 3<br>输出: “LCIRETOESIIGEDHN”  </p>
 </blockquote>
-<p>示例 2:</p>
+<p>示例 2:  </p>
 <blockquote>
-<p>输入: “bbbbb”<br>输出: 1<br>解释: 因为无重复字符的最长子串是 “b”，所以其长度为 1。  </p>
+<p>输入: s = “LEETCODEISHIRING”, numRows = 4<br>输出: “LDREOEIIECIHNTSG”  </p>
 </blockquote>
-<p>示例 3:</p>
-<blockquote>
-<p>输入: “pwwkew”<br>输出: 3<br>解释: 因为无重复字符的最长子串是 “wke”，所以其长度为 3。<br>请注意，你的答案必须是 子串 的长度，”pwke” 是一个子序列，不是子串。</p>
-</blockquote>
-<h1 id="分析"><span class="post-title-index">2. </span><a href="#分析" class="headerlink" title="分析"></a>分析</h1><p>此题所需要的，是寻找一个子串，判断其是否含有重复字符。如果含有重复字符，则换下一个子串；否则判断当前子串的长度是否超过目前已经找到的满足题意的子串的长度。所以，我们需要确定的，是如何去取子串，并快速判断该子串中知否存在重复字符。<br>取字符串时，采用滑动窗口的方式。窗口有两个参数，一个是位置，一个是大小，也即窗宽和窗位。我们使用<code>start</code>和<code>end</code>两个指针来代表这个滑动窗口即可。<br>快速判断是否存在重复字符简单，利用Hash Table，key记录字符，value记录最后一次出现该字符的位置。只要<code>str[end]</code>最后一次出现的位置在start之前，就说明在<code>str[start,end]</code>之间出现了重复的字符。</p>
-<p>比如一个带判断的字符串$abcdcefg$，我们选择一个子串$\boxed{a}bcdcefg$，其中是没有重复字符的，那么就向右多选择一个字符。  </p>
-<p>得到$\boxed{ab}cdcefg$，仍然没有重复字符，此时最大无重复字符子串长度为2。则再向右多选则一个。  </p>
-<p>得到$\boxed{abc}dcefg$，仍然没有重复字符，此时最大无重复字符子串长度为3。则再向右多选择一个。 </p>
-<p>得到$\boxed{abcd}cefg$，仍然没有重复字符，此时最大无重复字符子串长度为4。则再向右多选择一个。  </p>
-<p>得到$\boxed{abcdc}efg$，此时有了重复字符。那么接下来有两种选择子串的方式：</p>
-<ul>
-<li>方法一：回头重新选择：<br>选择$a\boxed{bc}dcefg$。此种选择方法其实之前在判断$\boxed{abc}dcefg$时已经判断过了，一定是没有重复字符的。所以这种方法比较浪费时间。这样的时间复杂度为$O(n^2)$</li>
-<li>方法二：仅移动左边界：<br>选择$a\boxed{bcd}cefg$。没有重复的，然后右边界移动，得到$a\boxed{bcdc}efg$。有重复的，左边界再移动，$ab\boxed{cdc}efg$。有重复的，左边界再移动，$abc\boxed{dc}efg$。没有重复的了。以此类推，这样的时间复杂度最坏为$O(2n)=O(n)$，也即最坏情况下（如$aaaaa$）右边界移动一下，左边界移动一下。</li>
-<li>方法三：双边界都移动：<br>因为如果需要判断$\boxed{abcdc}efg$，则在此之前其无重复字符的子串的最大长度一定至少是4了。只需要判断长度为5或更大的即可。因此将整个框子向右移动一次：$a\boxed{bcdce}fg$。发现其中有重复字符。那如果左边界直接跳过重复字符呢？<br>由于刚刚的重复字符是c，前一个重复字符位于2处，所以左边界直接跳至3，同时右边界移动1个位置，得到：$abc\boxed{dce}fg$。然后右边界逐步向右。<br>注意，右侧只能一步一步往前走，如果右边界向右跳的话，就无法往Hash Table中添加字符信息了。另外，如果在Hash Table中存储字符所在位置的后一个位置的话，左边界在跳跃时，就不需要再+1了。</li>
-</ul>
-<h1 id="解题"><span class="post-title-index">3. </span><a href="#解题" class="headerlink" title="解题"></a>解题</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">lengthOfLongestSubstring</span><span class="params">(String s)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(s.isEmpty())&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//minimum answer is 1 letter as a substring.</span></span><br><span class="line">        <span class="keyword">int</span> ans=<span class="number">1</span>;</span><br><span class="line">        <span class="keyword">int</span> start=<span class="number">0</span>, end=<span class="number">0</span>;</span><br><span class="line">        <span class="keyword">int</span> sLen=s.length();</span><br><span class="line">        <span class="comment">//store last character's position. key: character, value: position</span></span><br><span class="line">        HashMap&lt;Character, Integer&gt; map=<span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">        <span class="keyword">while</span>(end&lt;sLen)&#123;</span><br><span class="line">            <span class="keyword">char</span> cEnd=s.charAt(end);</span><br><span class="line">            <span class="keyword">if</span>(map.containsKey(cEnd))&#123;</span><br><span class="line">                <span class="comment">//when find duplicate character, start jump to the position</span></span><br><span class="line">                <span class="comment">//if the position &gt; start</span></span><br><span class="line">                <span class="comment">//or the duplicate character appears before the start (and </span></span><br><span class="line">                <span class="comment">//it means the character str[end] is not duplicated in</span></span><br><span class="line">                <span class="comment">//str[start, end])</span></span><br><span class="line">                start=Integer.max(start, map.get(cEnd));</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//increase end first, and then put(cEnd, end), store</span></span><br><span class="line">            <span class="comment">// the position 1 behind the character</span></span><br><span class="line">            end++;</span><br><span class="line">            map.put(cEnd, end);</span><br><span class="line">            ans=Integer.max(end-start, ans);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> ans;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h1 id="复杂度分析"><span class="post-title-index">4. </span><a href="#复杂度分析" class="headerlink" title="复杂度分析"></a>复杂度分析</h1><p>时间上，由于end一直在向右移动，未曾停歇，所以一共执行了n次。而每一次中，移动start、插入Hash Table、查询Hash Table、计算ans都是$O(1)$的，因此时间复杂度为$O(n)$。  </p>
-<p>空间上，由于使用了Hash Table，并且每一个不同的字符都会存储在Hash Table中，所以空间复杂度为$O(n)$。</p>
+<p>解释:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">L     D     R</span><br><span class="line">E   O E   I I</span><br><span class="line">E C   I H   N</span><br><span class="line">T     S     G</span><br></pre></td></tr></table></figure></p>
+<h1 id="分析"><span class="post-title-index">2. </span><a href="#分析" class="headerlink" title="分析"></a>分析</h1><p>根据题意，要将原来$\longrightarrow$方向的字符串改成$\downarrow\nearrow\downarrow\nearrow$这样排布的字符串，并且按行输出。<br>而且题目给大家省事了，不用考虑空格，那么其实就可以以$\downarrow\uparrow\downarrow\uparrow$的方向来填充，只不过需要注意的是，在上下两个端点，都只能停留一下。用a-z表示的话，差不多就是这样的：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">agm</span><br><span class="line">bfhln</span><br><span class="line">ceiko</span><br><span class="line">djp</span><br></pre></td></tr></table></figure><br>而因为无论如何，所有字符都是需要遍历一遍的，也就是说算法是$O(n)$的，那么模拟一下排列的顺序，就可以了。<br>我们取一个变量<code>i</code>，让其代表即将填充到第<code>i</code>行所代表的字符串中。然后每填完一行，<code>i</code>就自增，直到到达行数<code>numRows</code>；再依次自减，直到为0；再依次自增，直到为<code>numRows</code>……如此循环，直到所有字符都被输出，结束。<br>为了减少字符串的构建，我们采用<code>StringBuilder</code>存储每一行，最后再合并。  </p>
+<h1 id="解题"><span class="post-title-index">3. </span><a href="#解题" class="headerlink" title="解题"></a>解题</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">convert</span><span class="params">(String s, <span class="keyword">int</span> numRows)</span> </span>&#123;</span><br><span class="line">        <span class="comment">//if only 1 row, returns with unmodified</span></span><br><span class="line">        <span class="keyword">if</span>(numRows==<span class="number">1</span>)</span><br><span class="line">            <span class="keyword">return</span> s;</span><br><span class="line">        <span class="comment">//numRows StringBuffers</span></span><br><span class="line">        StringBuffer[] sbs=<span class="keyword">new</span> StringBuffer[numRows];</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;numRows;i++)&#123;</span><br><span class="line">            sbs[i]=<span class="keyword">new</span> StringBuffer();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//the row to append the character</span></span><br><span class="line">        <span class="keyword">int</span> arrIndex=<span class="number">0</span>;</span><br><span class="line">        <span class="comment">//step dicrection. 1: downward  0: upward</span></span><br><span class="line">        <span class="keyword">int</span> direction=<span class="number">1</span>;</span><br><span class="line">        <span class="comment">//iterate the string</span></span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> stringIndex=<span class="number">0</span>;stringIndex&lt;s.length();++stringIndex)&#123;</span><br><span class="line">            sbs[arrIndex].append(s.charAt(stringIndex));</span><br><span class="line">            arrIndex+=direction;</span><br><span class="line">            <span class="keyword">if</span>(direction&gt;<span class="number">0</span>&amp;&amp;arrIndex==numRows-<span class="number">1</span>)&#123;</span><br><span class="line">                direction=-<span class="number">1</span>;</span><br><span class="line">            &#125;<span class="keyword">else</span> <span class="keyword">if</span>(direction&lt;<span class="number">0</span>&amp;&amp;arrIndex==<span class="number">0</span>)&#123;</span><br><span class="line">                direction=<span class="number">1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        StringBuffer result=<span class="keyword">new</span> StringBuffer();</span><br><span class="line">        <span class="keyword">for</span>(StringBuffer sb:sbs)&#123;</span><br><span class="line">            result.append(sb);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> result.toString();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
     </div>
 
@@ -259,8 +245,7 @@
       <footer class="post-footer">
           <div class="post-tags">
               <a href="/tags/LeetCode/" rel="tag"># LeetCode</a>
-              <a href="/tags/Two-Pointer/" rel="tag"># Two Pointer</a>
-              <a href="/tags/Sliding-Window/" rel="tag"># Sliding Window</a>
+              <a href="/tags/Simulate/" rel="tag"># Simulate</a>
           </div>
 
         
@@ -269,13 +254,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/07/31/LC-0002-AddTwoNumbers/" rel="prev" title="LC-0002-两数相加">
-      <i class="fa fa-chevron-left"></i> LC-0002-两数相加
+    <a href="/2020/08/12/LC-0005-LongestPalindrome/" rel="prev" title="LC-0005-最长回文子串">
+      <i class="fa fa-chevron-left"></i> LC-0005-最长回文子串
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2020/08/04/LC-0004-FindMedianSortedArrays/" rel="next" title="LC-0004-寻找两个正序数组的中位数">
-      LC-0004-寻找两个正序数组的中位数 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -334,7 +316,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#题干"><span class="nav-text">1. 题干</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分析"><span class="nav-text">2. 分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#解题"><span class="nav-text">3. 解题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#复杂度分析"><span class="nav-text">4. 复杂度分析</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#题干"><span class="nav-text">1. 题干</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分析"><span class="nav-text">2. 分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#解题"><span class="nav-text">3. 解题</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
