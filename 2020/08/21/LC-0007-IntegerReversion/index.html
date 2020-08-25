@@ -20,22 +20,21 @@
     var CONFIG = {"hostname":"wudi.space","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="在写hexo的md时，如果要预览文章，要么是通过hexo s开启一个服务，在浏览器中本地浏览，要么就直接通过hexo d -g发布到服务器上。前者总是占用着本地资源，而且三天两头才写一篇文章的话，很容易会忘记首先要打开hexo s；后者的话，就更麻烦了。为了解决这个问题，在VS Code的插件市场中苦苦寻觅，终于找到了一个还算不错的办法。">
+  <meta name="description" content="题干给出一个 32 位的有符号整数，你需要将这个整数中每位上的数字进行反转。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="在VS Code中使用Hexo的预览插件">
-<meta property="og:url" content="http://wudi.space/2020/08/11/BuildSite-UseHexoExtensionInVsCode/index.html">
+<meta property="og:title" content="LC-0007-整数反转">
+<meta property="og:url" content="http://wudi.space/2020/08/21/LC-0007-IntegerReversion/index.html">
 <meta property="og:site_name" content="吴迪小站">
-<meta property="og:description" content="在写hexo的md时，如果要预览文章，要么是通过hexo s开启一个服务，在浏览器中本地浏览，要么就直接通过hexo d -g发布到服务器上。前者总是占用着本地资源，而且三天两头才写一篇文章的话，很容易会忘记首先要打开hexo s；后者的话，就更麻烦了。为了解决这个问题，在VS Code的插件市场中苦苦寻觅，终于找到了一个还算不错的办法。">
+<meta property="og:description" content="题干给出一个 32 位的有符号整数，你需要将这个整数中每位上的数字进行反转。">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2020-08-11T05:18:45.000Z">
-<meta property="article:modified_time" content="2020-08-12T04:56:34.979Z">
+<meta property="article:published_time" content="2020-08-21T07:54:50.000Z">
+<meta property="article:modified_time" content="2020-08-25T03:19:14.994Z">
 <meta property="article:author" content="吴迪">
-<meta property="article:tag" content="建站">
-<meta property="article:tag" content="hexo">
-<meta property="article:tag" content="插件">
+<meta property="article:tag" content="LeetCode">
+<meta property="article:tag" content="Math">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://wudi.space/2020/08/11/BuildSite-UseHexoExtensionInVsCode/">
+<link rel="canonical" href="http://wudi.space/2020/08/21/LC-0007-IntegerReversion/">
 
 
 <script id="page-configurations">
@@ -48,7 +47,7 @@
   };
 </script>
 
-  <title>在VS Code中使用Hexo的预览插件 | 吴迪小站</title>
+  <title>LC-0007-整数反转 | 吴迪小站</title>
   
 
 
@@ -163,7 +162,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://wudi.space/2020/08/11/BuildSite-UseHexoExtensionInVsCode/">
+    <link itemprop="mainEntityOfPage" href="http://wudi.space/2020/08/21/LC-0007-IntegerReversion/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg?raw=true">
@@ -176,7 +175,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          在VS Code中使用Hexo的预览插件
+          LC-0007-整数反转
         </h1>
 
         <div class="post-meta">
@@ -186,14 +185,14 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2020-08-11 13:18:45" itemprop="dateCreated datePublished" datetime="2020-08-11T13:18:45+08:00">2020-08-11</time>
+              <time title="创建时间：2020-08-21 15:54:50" itemprop="dateCreated datePublished" datetime="2020-08-21T15:54:50+08:00">2020-08-21</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-08-12 12:56:34" itemprop="dateModified" datetime="2020-08-12T12:56:34+08:00">2020-08-12</time>
+                <time title="修改时间：2020-08-25 11:19:14" itemprop="dateModified" datetime="2020-08-25T11:19:14+08:00">2020-08-25</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -201,7 +200,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E7%BD%91%E7%AB%99%E5%BB%BA%E8%AE%BE/" itemprop="url" rel="index"><span itemprop="name">网站建设</span></a>
+                  <a href="/categories/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
                 </span>
             </span>
 
@@ -223,25 +222,23 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>在写hexo的md时，如果要预览文章，要么是通过<code>hexo s</code>开启一个服务，在浏览器中本地浏览，要么就直接通过<code>hexo d -g</code>发布到服务器上。前者总是占用着本地资源，而且三天两头才写一篇文章的话，很容易会忘记首先要打开<code>hexo s</code>；后者的话，就更麻烦了。为了解决这个问题，在VS Code的插件市场中苦苦寻觅，终于找到了一个还算不错的办法。<br><a id="more"></a><br>之前一直在搜索的是hexo的插件，后来转念一想，我要在本地预览的无非是markdown文件，为什么不能直接使用markdown preview类型的插件呢。我的要求很明确：</p>
-<ul>
-<li>实时预览，或通过最简单的命令异步预览  </li>
-<li>支持主要的markdown语法，最起码不影响文章结构  </li>
-<li>支持mathjax  </li>
-<li>pandoc渲染支持，因为hexo我已经换成用pandoc进行render了，希望本地预览与线上实际效果是一致的</li>
-</ul>
-<p>于是在vs code的extension marketplace中以markdown preview为关键词进行搜索，很快一个基本符合我要求的插件就引入眼帘：markdown-preview-enhanced<br>VS code的插件安装很简单，点击install按钮即可。安装完成后，打开该插件的settings。</p>
-<h1 id="自动打开预览"><span class="post-title-index">1. </span><a href="#自动打开预览" class="headerlink" title="自动打开预览"></a>自动打开预览</h1><p>首先需要勾选下面这个选项，这样当打开md文件时，将会自动开启预览窗口。  </p>
-<ul>
-<li>[x] Automatically show preview of markdown being edited.<br>当然要是不嫌麻烦，也可以直接修改vs code的settings.json文件<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.automaticallyShowPreviewOfMarkdownBeingEdited": true</span><br></pre></td></tr></table></figure>
-这时，就可以打开任意md文件，以启动预览窗口。（可能需要重启vs code）</li>
-</ul>
-<h1 id="调整renderer"><span class="post-title-index">2. </span><a href="#调整renderer" class="headerlink" title="调整renderer"></a>调整renderer</h1><p>然后根据数学公式使用的渲染器考量是否需要修改。找到Math Rendering Options，默认采用的是KaTex。由于我Hexo中使用的是MathJax，因此这里改成了MathJax。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.mathRenderingOption": "MathJax"</span><br></pre></td></tr></table></figure></p>
-<h1 id="替换renderer为pandoc"><span class="post-title-index">3. </span><a href="#替换renderer为pandoc" class="headerlink" title="替换renderer为pandoc"></a>替换renderer为pandoc</h1><p>这里需要修改1~2个地方。首先将设置拉到最下面，倒数第3个选项，勾选Use Pandoc Parser，以替代原本的markdown-it。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.pandocPath": "pandoc"</span><br></pre></td></tr></table></figure><br>然后确认Pandoc Path是否正确。如果你的Pandoc是全局安装的，那么这里直接写”pandoc”就可以了。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.pandocPath": "pandoc"</span><br></pre></td></tr></table></figure></p>
-<h1 id="调整界面样式"><span class="post-title-index">4. </span><a href="#调整界面样式" class="headerlink" title="调整界面样式"></a>调整界面样式</h1><p>接着，打开任意一个md文件，在预览中观察是否有不舒服的地方（比如我的vs code主题是dark的，但是markdown preview仍然是亮色主题）。这里有几个可以修改的。  </p>
-<h2 id="主要主题"><span class="post-title-index">4.1. </span><a href="#主要主题" class="headerlink" title="主要主题"></a>主要主题</h2><p>在pandocPath设置下一个，可以修改Preview Theme。这里我选用的是atom-dark：<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.previewTheme": "atom-dark.css"</span><br></pre></td></tr></table></figure><br>当然，要是有能力的话，也可以直接修改该css文件的内容（我是真不会），该文件位于：<code>~/.vscode/extensions/shd101wyy.markdown-preview-enhanced-0.5.12/node_modules/@shd101wyy/mume/styles/prism_theme/src</code>。插件版本可能略有差异，如果确定要去修改的话，自己注意好路径。</p>
-<h2 id="代码块主题"><span class="post-title-index">4.2. </span><a href="#代码块主题" class="headerlink" title="代码块主题"></a>代码块主题</h2><p>修改过Preview Theme后，发现使用```包裹起来的代码块背景颜色仍然是白色的，为此，去修改设置。该设置位于插件设置的头部（第6个），Code Block Theme，选择与Preview Theme相协调的配色，或使用auto.css由插件自己选择即可。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.codeBlockTheme": "auto.css"</span><br></pre></td></tr></table></figure></p>
-<h2 id="mermaid主题"><span class="post-title-index">4.3. </span><a href="#mermaid主题" class="headerlink" title="mermaid主题"></a>mermaid主题</h2><p>如果使用了mermaid流程图的话，可以在这里修改其主题配色，位于Math Rendering Option的下一个，Mermaid Theme。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.mermaidTheme": "default"</span><br></pre></td></tr></table></figure></p>
+        <h1 id="题干"><span class="post-title-index">1. </span><a href="#题干" class="headerlink" title="题干"></a>题干</h1><p>给出一个 32 位的有符号整数，你需要将这个整数中每位上的数字进行反转。<br><a id="more"></a><br>示例1：   </p>
+<blockquote>
+<p>输入: 123<br>输出: 321   </p>
+</blockquote>
+<p>示例 2:</p>
+<blockquote>
+<p>输入: -123<br>输出: -321</p>
+</blockquote>
+<p>示例 3:</p>
+<blockquote>
+<p> 输入: 120<br> 输出: 21</p>
+</blockquote>
+<p>注意:</p>
+<p>假设我们的环境只能存储得下 32 位的有符号整数，则其数值范围为 [−231,  231 − 1]。请根据这个假设，如果反转后整数溢出那么就返回 0。</p>
+<h1 id="分析"><span class="post-title-index">2. </span><a href="#分析" class="headerlink" title="分析"></a>分析</h1><p>常规思路，利用取余运算与取整运算，将整数各位分离，并重新组合。<br>唯一需要注意的，也正如题干中提示的，需要小心翻转后的整数溢出int类型的大小。比如<code>Integer.MAX_VALUE=2147483647</code>翻转后的<code>7463846412</code>，显然已经溢出了<code>Integer.MAX_VALUE</code>。<br>那么接下来就是如何判断一个数在反转后会不会溢出。<br>对于正数，如果一个数×10后超过了<code>Integer.MAX_VALUE=2147483647</code>，那么它有可能会溢出；但是如果一个数超过了<code>Integer.MAX_VALUE/10</code>，那它一定会溢出。所以使用后一个作为是否会溢出的判据将会更有效。<br>对于负数同理，如果一个数后小于<code>Integer.MIN_VALUE/10</code>，那它也一定会溢出。</p>
+<h1 id="解题"><span class="post-title-index">3. </span><a href="#解题" class="headerlink" title="解题"></a>解题</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">reverse</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> result=<span class="number">0</span>;</span><br><span class="line">        <span class="keyword">int</span> maxValue=<span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>(x&lt;<span class="number">0</span>)&#123;</span><br><span class="line">            result=(x%<span class="number">10</span>);</span><br><span class="line">            x=x/<span class="number">10</span>;</span><br><span class="line">            maxValue=Integer.MIN_VALUE;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            maxValue=Integer.MAX_VALUE;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">while</span>(x!=<span class="number">0</span>)&#123;</span><br><span class="line">            <span class="keyword">if</span>((result&gt;<span class="number">0</span>&amp;&amp;result&gt;maxValue/<span class="number">10</span>)||(result&lt;<span class="number">0</span>&amp;&amp;result&lt;maxValue/<span class="number">10</span>))&#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            result=result*<span class="number">10</span>+x%<span class="number">10</span>;</span><br><span class="line">            x/=<span class="number">10</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="复杂度"><span class="post-title-index">4. </span><a href="#复杂度" class="headerlink" title="复杂度"></a>复杂度</h1><p>时间上仅与输入数字的位数相关，故时间复杂度为：$O(\lg(n))+k_(10)$。<br>空间上只有常数个变量存储，且无递归，所以空间复杂度为：$O(1)$</p>
 
     </div>
 
@@ -251,9 +248,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/%E5%BB%BA%E7%AB%99/" rel="tag"># 建站</a>
-              <a href="/tags/hexo/" rel="tag"># hexo</a>
-              <a href="/tags/%E6%8F%92%E4%BB%B6/" rel="tag"># 插件</a>
+              <a href="/tags/LeetCode/" rel="tag"># LeetCode</a>
+              <a href="/tags/Math/" rel="tag"># Math</a>
           </div>
 
         
@@ -262,13 +258,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/08/11/BuildSite-AddSectionNumber/" rel="prev" title="添加小节号">
-      <i class="fa fa-chevron-left"></i> 添加小节号
+    <a href="/2020/08/13/LC-0006-ZigzagConversion/" rel="prev" title="LC-0006-Z字形变换">
+      <i class="fa fa-chevron-left"></i> LC-0006-Z字形变换
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2020/08/12/LC-0005-LongestPalindrome/" rel="next" title="LC-0005-最长回文子串">
-      LC-0005-最长回文子串 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -327,7 +320,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#自动打开预览"><span class="nav-text">1. 自动打开预览</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#调整renderer"><span class="nav-text">2. 调整renderer</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#替换renderer为pandoc"><span class="nav-text">3. 替换renderer为pandoc</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#调整界面样式"><span class="nav-text">4. 调整界面样式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#主要主题"><span class="nav-text">4.1. 主要主题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#代码块主题"><span class="nav-text">4.2. 代码块主题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mermaid主题"><span class="nav-text">4.3. mermaid主题</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#题干"><span class="nav-text">1. 题干</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分析"><span class="nav-text">2. 分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#解题"><span class="nav-text">3. 解题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#复杂度"><span class="nav-text">4. 复杂度</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
