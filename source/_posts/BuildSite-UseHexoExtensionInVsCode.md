@@ -37,6 +37,7 @@ VS code的插件安装很简单，点击install按钮即可。安装完成后，
 ```
 
 # 替换renderer为pandoc
+如果使用了pandoc作为渲染器的话，那么就需要修改以下内容，以求md preview中的效果和最终效果尽量一致。   
 这里需要修改1~2个地方。首先将设置拉到最下面，倒数第3个选项，勾选Use Pandoc Parser，以替代原本的markdown-it。
 ```json
 "markdown-preview-enhanced.pandocPath": "pandoc"
@@ -45,6 +46,8 @@ VS code的插件安装很简单，点击install按钮即可。安装完成后，
 ```json
 "markdown-preview-enhanced.pandocPath": "pandoc"
 ```
+pandoc的安装很简单，在[Pandoc官网](https://www.pandoc.org/installing.html)下载和系统一致的版本，重启VS code即可。
+
 
 # 调整界面样式
 接着，打开任意一个md文件，在预览中观察是否有不舒服的地方（比如我的vs code主题是dark的，但是markdown preview仍然是亮色主题）。这里有几个可以修改的。  

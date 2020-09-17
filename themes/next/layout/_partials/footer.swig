@@ -1,6 +1,6 @@
 {%- if theme.footer.beian.enable %}
   <div class="beian">
-    {{- next_url('http://www.beian.miit.gov.cn', theme.footer.beian.icp + ' ') }}
+    {{- next_url('http://beian.miit.gov.cn', theme.footer.beian.icp + ' ') }}
     {%- if theme.footer.beian.gongan_icon_url %}
       <img src="{{ url_for(theme.footer.beian.gongan_icon_url) }}" style="display: inline-block;">
     {%- endif %}
@@ -64,7 +64,60 @@
   <script src='https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js'></script>
   <script>
     if (window.mermaid) {
-      mermaid.initialize();
+      var config = {
+        theme:'default',
+        logLevel:'fatal',
+        securityLevel:'strict',
+        startOnLoad:true,
+        arrowMarkerAbsolute:false,
+
+        er:{
+          diagramPadding:20,
+          layoutDirection:'TB',
+          minEntityWidth:100,
+          minEntityHeight:75,
+          entityPadding:15,
+          stroke:'gray',
+          fill:'honeydew',
+          fontSize:12,
+          useMaxWidth:true,
+        },
+        flowchart:{
+          diagramPadding:8,
+          htmlLabels:true,
+          curve:'linear',
+        },
+        sequence:{
+          diagramMarginX:50,
+          diagramMarginY:10,
+          actorMargin:50,
+          width:150,
+          height:65,
+          boxMargin:10,
+          boxTextMargin:5,
+          noteMargin:10,
+          messageMargin:35,
+          messageAlign:'center',
+          mirrorActors:true,
+          bottomMarginAdj:1,
+          useMaxWidth:true,
+          rightAngles:false,
+          showSequenceNumbers:false,
+        },
+        gantt:{
+          titleTopMargin:25,
+          barHeight:20,
+          barGap:4,
+          topPadding:50,
+          leftPadding:75,
+          gridLineStartPadding:35,
+          fontSize:11,
+          fontFamily:'"Open-Sans", "sans-serif"',
+          numberSectionStyles:4,
+          axisFormat:'%Y-%m-%d',
+        }
+      };
+      mermaid.initialize(config);
     }
   </script>
 {% endif %}

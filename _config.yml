@@ -101,6 +101,11 @@ deploy:
 - type: git
   repo: https://github.com/discko/discko.github.io.git
   branch: master
+  ignore_pattern: baidu_urls.txt
+- type: git
+  repo: https://e.coding.net/discko/discko.coding.me/discko.coding.me.git
+  branch: master
+  ignore_pattern: baidu_urls.txt
 - type: baidu_url_submitter #Baidu SEO
 
 
