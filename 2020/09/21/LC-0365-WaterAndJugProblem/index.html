@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.wudi.space","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="题干有两个容量分别为 x升 和 y升 的水壶以及无限多的水。请判断能否通过使用这两个水壶，从而可以得到恰好 z升 的水？   如果可以，最后请用以上水壶中的一或两个来盛放取得的 z升水。   你允许：    装满任意一个水壶   清空任意一个水壶   从一个水壶向另外一个水壶倒水，直到装满或者倒空">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LC-0365-水壶问题">
+<meta property="og:url" content="https://www.wudi.space/2020/09/21/LC-0365-WaterAndJugProblem/index.html">
+<meta property="og:site_name" content="吴迪小站">
+<meta property="og:description" content="题干有两个容量分别为 x升 和 y升 的水壶以及无限多的水。请判断能否通过使用这两个水壶，从而可以得到恰好 z升 的水？   如果可以，最后请用以上水壶中的一或两个来盛放取得的 z升水。   你允许：    装满任意一个水壶   清空任意一个水壶   从一个水壶向另外一个水壶倒水，直到装满或者倒空">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-09-21T06:46:04.000Z">
+<meta property="article:modified_time" content="2020-10-14T06:16:36.635Z">
+<meta property="article:author" content="吴迪">
+<meta property="article:tag" content="LeetCode">
+<meta property="article:tag" content="Math">
+<meta property="article:tag" content="BFS&#x2F;DFS">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://www.wudi.space/2020/09/21/LC-0365-WaterAndJugProblem/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>LC-0365-水壶问题 | 吴迪小站</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">吴迪小站</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.wudi.space/2020/09/21/LC-0365-WaterAndJugProblem/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg?raw=true">
+      <meta itemprop="name" content="吴迪">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="吴迪小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          LC-0365-水壶问题
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-09-21 14:46:04" itemprop="dateCreated datePublished" datetime="2020-09-21T14:46:04+08:00">2020-09-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-10-14 14:16:36" itemprop="dateModified" datetime="2020-10-14T14:16:36+08:00">2020-10-14</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="题干"><span class="post-title-index">1. </span><a href="#题干" class="headerlink" title="题干"></a>题干</h1><p>有两个容量分别为 x升 和 y升 的水壶以及无限多的水。请判断能否通过使用这两个水壶，从而可以得到恰好 z升 的水？  </p>
+<p>如果可以，最后请用以上水壶中的一或两个来盛放取得的 z升水。  </p>
+<p>你允许：  </p>
+<ul>
+<li>装满任意一个水壶  </li>
+<li>清空任意一个水壶  </li>
+<li>从一个水壶向另外一个水壶倒水，直到装满或者倒空  <a id="more"></a>
+</li>
+</ul>
+<p>示例 1: (From the famous <a href="https://www.youtube.com/watch?v=BVtQNK_ZUJg" target="_blank" rel="noopener">“Die Hard” example</a>)</p>
+<blockquote>
+<p>输入: x = 3, y = 5, z = 4<br>输出: True</p>
+</blockquote>
+<p>示例2：  </p>
+<blockquote>
+<p>输入: x = 2, y = 6, z = 5<br>输出: False</p>
+</blockquote>
+<h1 id="方法一"><span class="post-title-index">2. </span><a href="#方法一" class="headerlink" title="方法一"></a>方法一</h1><h2 id="分析"><span class="post-title-index">2.1. </span><a href="#分析" class="headerlink" title="分析"></a>分析</h2><p>在没有什么更好的办法之前，我们按照自仿真的办法来模拟一下。对于任意一个时刻，我们可以认为水壶中，只会有“空”、“有水”三个状态，对于每一个水壶，我们可以执行“加满”、“倒空”、“倒入另一个水壶”三个动作。对这三个状态，和三个行为，我们可以定义出如下几种行为（我们设A罐的最大容量为$x$，当前水量为$a$；B罐的最大容量为$y$，当前水量为$b$；且$x≤y$：  </p>
+<ol>
+<li>当$a=0$时，$a’=x$，$b’=b$（即利用外部水源，将A罐从空装满）  </li>
+<li>当$b=0$时，$b’=y$，$b’=a$（即利用外部水源，将B罐从空装满）  </li>
+<li>当$a=x$时，$a’=0$（即将A罐清空）  </li>
+<li>当$b=y$时，$b’=0$（即将B罐清空）  </li>
+<li>当$a&gt;0$时，若$a+b&gt;y$，则$a’=a+b-y$，$b’=y$；若$a+b\le y$，则$a’=0$，$b’=a+b$（即将A罐中的水倒入B罐）    </li>
+<li>当$b&gt;0$时，若$a+b&gt;x$，则$a’=x$，$b’=a+b-x$；若$a+b\le x$，则$a’=a+b$，$b’=0$（即将B罐中的水倒入A罐）  </li>
+</ol>
+<p>其他行为都可以认为是非法的。  </p>
+<p>可能有人会问，如果A罐中有水，但不满，也可以执行1.的行为呀。没错，现实生活中是可以的，但是在这个题目的环境中是没有意义的。<br>我们举个例子，对于$\{x=3, y=5\}$的情况，先将B罐装满得到$(a,b)=(0,5)$，然后将B罐中的水倒入A罐$(a,b)=(3,2)$。这时候我们将B罐装满$(a,b)=(3,5)$，这和直接从$(a,b)=(0,0)$开始，先后利用外部水源将两个罐子装满没有区别。  </p>
+<p>那么，这时候，我们就可以利用DFS或BFS，对这六个状态进行深度优先搜索，直到A罐或B罐或两罐中总共的水量是$z$为止。<br>根据网上的意见，此题如果使用递归的DFS的话，可能会因递归栈过深而爆栈。为此，我们利用队列进行BFS。在BFS的过程中，将已经遇到过的$(a,b)$记录下来，以免重复。  </p>
+<p>最终的代码如下：  </p>
+<h2 id="解题"><span class="post-title-index">2.2. </span><a href="#解题" class="headerlink" title="解题"></a>解题</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="comment">//a structure to record two tins</span></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">Tins</span></span>&#123;</span><br><span class="line">        <span class="keyword">int</span> a;</span><br><span class="line">        <span class="keyword">int</span> b;</span><br><span class="line">        Tins(<span class="keyword">int</span> a, <span class="keyword">int</span> b)&#123;</span><br><span class="line">            <span class="keyword">this</span>.a=a;<span class="keyword">this</span>.b=b;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">hashCode</span><span class="params">()</span></span>&#123;</span><br><span class="line">            <span class="keyword">return</span> java.util.Objects.hash(a,b);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">equals</span><span class="params">(Object other)</span></span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">this</span>==other || (other != <span class="keyword">null</span> &amp;&amp; other <span class="keyword">instanceof</span> Tins &amp;&amp; a==((Tins)other).a&amp;&amp;b==((Tins)other).b);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">canMeasureWater</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> y, <span class="keyword">int</span> z)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(x+y&lt;z || z&lt;<span class="number">0</span> || x&lt;<span class="number">0</span> || y&lt;<span class="number">0</span>)&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//special cases: &#123;x=0, y=0, z=0&#125;, &#123;x=1, y=0, z=0&#125;</span></span><br><span class="line">        <span class="keyword">if</span>(z==<span class="number">0</span> || x+y==z)&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        HashSet&lt;Tins&gt; visited=<span class="keyword">new</span> HashSet&lt;&gt;();</span><br><span class="line">        ArrayDeque&lt;Tins&gt; queue=<span class="keyword">new</span> ArrayDeque&lt;&gt;();</span><br><span class="line">        </span><br><span class="line">        Tins root=<span class="keyword">new</span> Tins(<span class="number">0</span>,<span class="number">0</span>), full=<span class="keyword">new</span> Tins(x,y);</span><br><span class="line">        queue.offer(root);</span><br><span class="line">        visited.add(root);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">while</span>(!queue.isEmpty())&#123;</span><br><span class="line">            Tins tins=queue.poll();</span><br><span class="line">            <span class="keyword">for</span>(<span class="keyword">int</span> condition=<span class="number">0</span>;condition&lt;<span class="number">6</span>;condition++)&#123;</span><br><span class="line">                Tins newTins=changeTins(full, tins.a, tins.b, condition);</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span>(newTins==<span class="keyword">null</span>||visited.contains(newTins))&#123;</span><br><span class="line">                    <span class="keyword">continue</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span>(newTins.a==z||newTins.b==z||newTins.a+newTins.b==z)&#123;</span><br><span class="line">                    <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">                &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                    visited.add(newTins);</span><br><span class="line">                    queue.offer(newTins);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> Tins <span class="title">changeTins</span><span class="params">(Tins full, <span class="keyword">int</span> a, <span class="keyword">int</span> b, <span class="keyword">int</span> condition)</span></span>&#123;</span><br><span class="line">        Tins tins=<span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">switch</span>(condition)&#123;</span><br><span class="line">            <span class="keyword">case</span> <span class="number">0</span>:</span><br><span class="line">                <span class="keyword">if</span>(a==<span class="number">0</span>)&#123;</span><br><span class="line">                    tins=<span class="keyword">new</span> Tins(full.a, b);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">                <span class="keyword">if</span>(b==<span class="number">0</span>)&#123;</span><br><span class="line">                    tins=<span class="keyword">new</span> Tins(a, full.b);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="number">2</span>:</span><br><span class="line">                <span class="keyword">if</span>(a==full.a)&#123;</span><br><span class="line">                    tins=<span class="keyword">new</span> Tins(<span class="number">0</span>, b);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="number">3</span>:</span><br><span class="line">                <span class="keyword">if</span>(b==full.b)&#123;</span><br><span class="line">                    tins=<span class="keyword">new</span> Tins(a, <span class="number">0</span>);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="number">4</span>:</span><br><span class="line">                <span class="keyword">if</span>(a&gt;<span class="number">0</span>)&#123;</span><br><span class="line">                    tins=a+b&gt;full.b?<span class="keyword">new</span> Tins(a+b-full.b, full.b):<span class="keyword">new</span> Tins(<span class="number">0</span>, a+b);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="number">5</span>:</span><br><span class="line">                <span class="keyword">if</span>(b&gt;<span class="number">0</span>)&#123;</span><br><span class="line">                    tins=a+b&gt;full.a?<span class="keyword">new</span> Tins(full.a, a+b-full.a):<span class="keyword">new</span> Tins(a+b, <span class="number">0</span>);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> tins;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="小结"><span class="post-title-index">3. </span><a href="#小结" class="headerlink" title="小结"></a>小结</h1><p>利用BFS进行处理，代码写起来本身不麻烦，各个条件的处理也还算简单。期间撞了两个没有考虑到的测试用例：$\{x=1,y=0,z=0\}$和$\{x=0,y=0,z=0\}$。<br>最终的运行结果没有问题，但是复杂度较高，上面的这套代码对36个OJ的测试用例，耗时在500ms上下，空间占用94MB+。所以一定是有更简单的办法的。</p>
+<p>时间上，不做过细的分析的话，A罐内可取的状态有$[0,x]$共$x+1$个，B罐内可取的状态有$[0,y]$共$y+1$个，BFS的时候的时间复杂度是$O(1)$，所以最终的时间复杂度不坏于$O(xy)$。  </p>
+<p>空间上，由于<code>queue</code>和<code>visited</code>两个最坏时需要将所有经历过的状态全部存下来，所以应该两倍于A罐和B罐的联合可能数，故空间复杂度是$O(xy)$。</p>
+<h1 id="方法二"><span class="post-title-index">4. </span><a href="#方法二" class="headerlink" title="方法二"></a>方法二</h1><h2 id="分析-1"><span class="post-title-index">4.1. </span><a href="#分析-1" class="headerlink" title="分析"></a>分析</h2><p>在思考方法一的时间和空间复杂度的时候，我就在想，到底会有多少个BFS的结点呢。于是我们来做一下实验。</p>
+<ul>
+<li><p>对于$\{x=3, y=5\}$的情况，我们可以称量的有：<br>8（A罐和B罐都装满，记作【12】)<br>7（B罐装满0+5，B罐倒入A罐3+2，倒光A罐0+2，B罐倒入A罐2+0，B罐装满2+5，记作【26362】）<br>6（B罐装满0+5，B罐倒入A罐3+2，A罐倒光0+2，B罐倒入A罐2+0，B罐装满2+5，B罐倒入A罐3+4，A罐倒光0+4，B罐倒入A罐3+1，A罐倒光0+1，B罐倒入A罐1+0，B罐装满1+5，记作【2636263632】）<br>5（【2】）<br>4（【263626】）<br>3（【1】）<br>2（【26】）<br>1（【26362636】）<br>0</p>
+</li>
+<li><p>对于$\{x=18,y=30\}$的情况，我们可以称量的有：<br>48（【12】）<br>42（B罐装满0+30，B罐倒入A罐18+12，A罐倒光0+12，B罐倒入A罐12+0，B罐装满12+30，【26362】）<br>36（B罐装满0+30，B罐倒入A罐18+12，A罐倒光0+12，B罐倒入A罐12+0，B管装满12+30，B罐倒入A罐18+24，A罐倒光0+24，B罐倒入A罐18+6，A罐倒光0+6，B罐倒入A罐6+0，B罐装满6+30，【26362636362】）<br>30（【2】）<br>24（【263626】）<br>18（【1】）<br>12（【26】）<br>6（【26362636】）<br>0  </p>
+</li>
+</ul>
+<p>有没有发现什么规律，我们能够得到的所有的可取的值，是从$0$到$x+y$间所有的$x$和$y$的最大公约数的倍数的数。但是这个最大公约数是怎么来的呢。我们看上面两个例子中，很多的步骤都是“B装满，B倒入A，A倒掉，B再倒入A”（也就是2636），像不像更相减损术？  </p>
+<p>知道了这个，那么代码写起来就很简单了。</p>
+<h2 id="解题-1"><span class="post-title-index">4.2. </span><a href="#解题-1" class="headerlink" title="解题"></a>解题</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">canMeasureWater</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> y, <span class="keyword">int</span> z)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(x+y&lt;z || z&lt;<span class="number">0</span> || x&lt;<span class="number">0</span> || y&lt;<span class="number">0</span>)&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span>(x+y==z||z==<span class="number">0</span>)&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// if(x&gt;y)&#123;</span></span><br><span class="line">        <span class="comment">//     x^=y;</span></span><br><span class="line">        <span class="comment">//     y^=x;</span></span><br><span class="line">        <span class="comment">//     x^=y;</span></span><br><span class="line">        <span class="comment">// &#125;</span></span><br><span class="line">        <span class="keyword">while</span>(y!=<span class="number">0</span>)&#123;</span><br><span class="line">            <span class="keyword">int</span> t=x%y;</span><br><span class="line">            x=y;</span><br><span class="line">            y=t;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> z%x==<span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="小结-1"><span class="post-title-index">4.3. </span><a href="#小结-1" class="headerlink" title="小结"></a>小结</h2><p>代码中使用的是辗转相除法来求$gcd$，而不是更相减损术。注释掉的部分是保持$x\le y$的，不过应该问题不大，毕竟如果$x\ge y$的话，也就多做一轮辗转相除法而已。最终辗转相除法中较大的那个数就是$gcd$。<br>这样的话，复杂度就是这样的：<br>时间上，我们将取余运算作为$O(1)$单位时间的话，那么最坏的情况下的时间复杂度是$O(\log n)$。（<a href="https://www.cnblogs.com/DeepJay/p/12025190.html" target="_blank" rel="noopener">辗转相除法的时间复杂度见此</a>，感觉很巧妙啊）。  </p>
+<p>空间上，仅使用了常数的空间，因此空间复杂度是$O(1)$。<br>提交后，时间稳定在了1ms左右。</p>
+<h2 id="尝试证明"><span class="post-title-index">4.4. </span><a href="#尝试证明" class="headerlink" title="尝试证明"></a>尝试证明</h2><p>上面我们直接含糊地一语带过了最重要的部分，那就是怎么确定这个问题和“$z$能否被$x$和$y$的最大公约数整除”是等价的。接下来，我就来尝试着证明这个问题。  </p>
+<p>首先，我们要确定一件事情，那就是可不可能两个罐子里，都有水，但是不满？我想这个应该没有问题吧，根据“方法一”中的6个行为，被操作的罐子中，至少有一个是空的（3、4、5.2、6.2）、至少有一个是满的（1、2、5.1、6.1），再没有其他的可能了。所以，两个罐子里，不可能都只有半壶水。<br>接下来，对上面的6个行为做一下量化：  </p>
+<ol>
+<li>当A罐空时，A罐装满，即$a’=0+x, b’=b$。  </li>
+<li>当B罐空时，B罐装满，即$a’=a, b’=0+y$。  </li>
+<li>当A罐满时，A罐倒光，即$a’=x-x, b’=b$。</li>
+<li>当B罐满时，B罐倒光，即$a’=a, b’=y-y$。</li>
+<li>当A罐非空时，A罐向B罐倒，倒完之后，A和B中只有一个是半壶水。  </li>
+<li>当B罐非空时，B罐向A罐倒，倒完之后，A和B中只有一个是半壶水。  </li>
+</ol>
+<p>同时，我们可以推导出“两个罐子里不可能都是空的”（这样就回到了初始状态），和“两个罐子里不可能都是满的”（这样下一步必然是3或4，那就相当于只做了2或1）。同时，5和6作为互逆的操作，不可以紧接着前后做。<br>接下来，我们做一些简单的模拟。</p>
+<p>首先我们假设$x\le y$，且$mx &lt; y &lt;(m+1)x$。然后假设第1步我们是将A罐装满的，记作$(x,0)@1$。<br>此时对于6个行为：  </p>
+<ul>
+<li><del>装满A</del>，不可以。因为此时A已经是满的了。  </li>
+<li><del>装满B</del>，不可以。因为两个罐子里不可以都是满的。  </li>
+<li><del>倒光A</del>，不可以。因为两个罐子不可以都是空的。  </li>
+<li><del>倒光B</del>，不可以。因为此时B已经是空的了。  </li>
+<li>将A倒入B，可以。这时得到$(0,x)@2$。  <ul>
+<li>装满A，可以。这时得到$(x,x)@3$  <ul>
+<li><del>装满A</del>，不可以。因为此时A已经是满的了。  </li>
+<li><del>装满B</del>，不可以。因为两个罐子里不可以都是满的。  </li>
+<li><del>倒光A</del>，不可以。因为这样就回到了上一步。  </li>
+<li><del>倒光B</del>，不可以。因为这样就相当于$(x,0)@1$。  </li>
+<li>将A倒入B，可以。这时得到$(0,2x)@3$。接下来不断重复此步，<strong><em>过程中B的水量从$x$、$2x$一直到$mx$</em></strong>，直到B装满，此时得到$(y-mx,y)@3$。  <ul>
+<li><del>装满A</del>，不可以。因为两个罐子不可以都是满的。  </li>
+<li><del>装满B</del>，不可以。因为B已经是满的了。  </li>
+<li><del>倒光A</del>，不可以。因为这样相当于$(0,y)@1$。  </li>
+<li>倒光B，可以。这样可以得到$(y-mx,0)@4$。  <ul>
+<li><del>装满A</del>，不可以。因为这样就相当于$(x,0)@1$。  </li>
+<li><del>装满B</del>，不可以。因为这样就回到了上一步。  </li>
+<li><del>倒光A</del>，不可以。因为两个罐子不可以都是空的。  </li>
+<li><del>倒光B</del>，不可以。因为此时B已经是空的了。</li>
+<li>将A倒入B，可以。这样可以得到$(0,y-mx)@5$。  <ul>
+<li>装满A，可以。这样就得到了$(x,y-mx)@6$。  <ul>
+<li><del>装满A</del>，不可以。因为此时A已经是满的了。  </li>
+<li><del>装满B</del>，不可以。因为两个罐子不可以都是满的。  </li>
+<li><del>倒光A</del>，不可以。因为这样就回到了上一步。  </li>
+<li><del>倒光B</del>，不可以。因为这样就相当于$(x,0)@1$。  </li>
+<li><strong><em>将A倒入B，可以。这样就得到了$(0,y-(m-1)x)@6$。</em></strong>  </li>
+<li><del>将B倒入A</del>，不可以。因为A已经是满的了。</li>
+</ul>
+</li>
+<li><del>装满B</del>，不可以。因为两个罐子不可以都是满的。  </li>
+<li><del>倒光A</del>，不可以。因为此时A已经是空的了。  </li>
+<li><del>倒光B</del>，不可以。因为两个罐子不可以都是空的。  </li>
+<li><del>将A倒入B</del>，不可以。因为此时A已经是空的了。  </li>
+<li><del>将B倒入A</del>，不可以。因为这和上一步互逆。</li>
+</ul>
+</li>
+<li><del>将B倒入A</del>，不可以。因为此时B已经是空的了。  </li>
+</ul>
+</li>
+<li><del>将A倒入B</del>， 不可以。因为此时B已经是满的了。  </li>
+<li>将B倒入A，可以。这样就得到了$(x,2y-(m+1)x)@4$。<ul>
+<li><del>装满A</del>，不可以。因为此时A是满的。  </li>
+<li><del>装满B</del>，不可以。因为两个罐子不可以都是满的。  </li>
+<li>倒光A，可以。这样就得到了$(0,2y-(m+1)x)@5$。  <ul>
+<li><del>装满A</del>，不可以。因为这样就回到了上一步。  </li>
+<li><del>装满B</del>，不可以。因为这样相当于$(0,y)@1$。  </li>
+<li><del>倒光A</del>，不可以。因为此时A已经是空的了。  </li>
+<li><del>倒光B</del>，不可以。因为两个罐子不可以都是空的。</li>
+<li><del>将A倒入B</del>，不可以。因为此时A已经是空的了。 </li>
+<li><strong><em>将B倒入A，可以。这样就得到了$(x,2y-(m+2)x)@6$。接下来不断重复此步m-1次，直到B内不足$x$，得到$(x,2y-(2m+1)x)@m+5$</em></strong></li>
+</ul>
+</li>
+<li><del>倒光B</del>，不可以。因为这样就相当于$(x,0)@1$。</li>
+<li><del>将A倒入B</del>，不可以。因为这和上一步互逆。 </li>
+<li><del>将B倒入A</del>，不可以。因为这时A已经是满的了。  </li>
+</ul>
+</li>
+</ul>
+</li>
+<li><del>将B倒入A</del>，不可以。因为这时A已经是满的了。  </li>
+</ul>
+</li>
+<li><del>装满B</del>，不可以。这样就相当于$(0,y)@1$   </li>
+<li><del>倒光A</del>，不可以。此时A已经是空的了。  </li>
+<li><del>倒光B</del>，不可以。两个罐子不可以都是空的。  </li>
+<li><del>将A倒入B</del>，不可以。此时A已经是空的了。  </li>
+<li><del>将B倒入A</del>，不可以。因为这和上一步互逆。  </li>
+</ul>
+</li>
+<li><del>将B倒入A</del>，不可以。因为此时B已经是空的了。  </li>
+</ul>
+<p>经过上面的推演，我们发现，历史的进程会有三个阶段。  </p>
+<ol>
+<li>第一个阶段，B罐中的水量从$x$、$2x$一直到$mx$。接下来会进入两个分支</li>
+<li>如果是分支一，到A罐为空，B罐内是$y-(m-1)x$的量，然后接下来呢？我们按照下面的继续。接下来每2步，B罐内的水容量就会减少1个$x$。在$5+2(m-1)$步之后，得到$(0,y-x)@3+2m$。在此过程中，B罐将会以此装有$y$、$y-x$、$y-2x$一直到$y-mx$的水量。：    <ul>
+<li>装满A，可以。这样就得到了$(x,y-(m-1)x)@7$。  <ul>
+<li><del>装满A</del>，不可以。因为这时A已经是满的了。</li>
+<li><del>装满B</del>，不可以。因为两个罐子不可以都是满的。  </li>
+<li><del>倒光A</del>，不可以。因为这样就回到了上一步。  </li>
+<li><del>倒光B</del>，不可以。因为这样就相当于$(x,0)@1$。  </li>
+<li><strong><em>将A倒入B，可以。这样就得到了$(0,y-(m-2)x)@8$。</em></strong>  </li>
+<li><del>将B倒入A</del>，不可以。因为A已经是满的了。</li>
+</ul>
+</li>
+<li><del>装满B</del>，不可以。因为这样相当于$(0,y)@1$。  </li>
+<li><del>倒光A</del>，不可以。因为A已经是空的了。  </li>
+<li><del>倒光B</del>，不可以。因为两个罐子不可以都是空的。  </li>
+<li><del>将A倒入B</del>，不可以。因为A已经是空的了。  </li>
+<li><del>将B倒入A</del>，不可以。因为这和上一步互逆。  </li>
+</ul>
+</li>
+<li>如果是后分支二，B罐中的水量，将会从$2y-(m+1)x$开始，每一步增加$x$的水量，直到$2y-(2m+1)x$。  </li>
+</ol>
+<p>有没有发现点什么。每一步的操作，都会使B罐的水量在$mx+ny$中，而且根据最小水量$(0,0)$、最大水量$(x,y)$我们知道，$mx+ny$的限制条件是：$0\le mx+ny \le x+y\quad|\quad x,y\in Z$。那么只要某个$mx+ny=z$，就说明这两个水壶可以装$z$的水。</p>
+<p>这时候我们就要请出我们的 <a href="https://baike.baidu.com/item/%E8%A3%B4%E8%9C%80%E5%AE%9A%E7%90%86" target="_blank" rel="noopener">裴蜀定理（贝祖定理）</a>。这个定理是这样描述的：  </p>
+<blockquote>
+<p>若$x,y$是整数,且$\gcd(x,y)=d$，那么对于任意的整数$x,y,ax+by$都一定是d的倍数。  </p>
+</blockquote>
+<p>所以，也就是说，如果$z$是$x,y$最大公约数的倍数，那么这个水壶问题就有解。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/LeetCode/" rel="tag"># LeetCode</a>
+              <a href="/tags/Math/" rel="tag"># Math</a>
+              <a href="/tags/BFS-DFS/" rel="tag"># BFS/DFS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/09/18/LC-0300-LongestIncreasingSubsequence/" rel="prev" title="LC-0300-最长上升子序列">
+      <i class="fa fa-chevron-left"></i> LC-0300-最长上升子序列
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/09/29/LC-0452-MinimumNumberOfArrowsToBurstBalloons/" rel="next" title="LC-0452-用最少数量的箭引爆气球">
+      LC-0452-用最少数量的箭引爆气球 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#题干"><span class="nav-text">1. 题干</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#方法一"><span class="nav-text">2. 方法一</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分析"><span class="nav-text">2.1. 分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#解题"><span class="nav-text">2.2. 解题</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#小结"><span class="nav-text">3. 小结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#方法二"><span class="nav-text">4. 方法二</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分析-1"><span class="nav-text">4.1. 分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#解题-1"><span class="nav-text">4.2. 解题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-1"><span class="nav-text">4.3. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#尝试证明"><span class="nav-text">4.4. 尝试证明</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="吴迪"
+      src="/images/avatar.jpg?raw=true">
+  <p class="site-author-name" itemprop="name">吴迪</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">25</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://beian.miit.gov.cn/" rel="noopener" target="_blank">苏ICP备17000391号 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">吴迪</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+
+  <script src='https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      var config = {
+        theme:'default',
+        logLevel:'fatal',
+        securityLevel:'strict',
+        startOnLoad:true,
+        arrowMarkerAbsolute:false,
+
+        er:{
+          diagramPadding:20,
+          layoutDirection:'TB',
+          minEntityWidth:100,
+          minEntityHeight:75,
+          entityPadding:15,
+          stroke:'gray',
+          fill:'honeydew',
+          fontSize:12,
+          useMaxWidth:true,
+        },
+        flowchart:{
+          diagramPadding:8,
+          htmlLabels:true,
+          curve:'linear',
+        },
+        sequence:{
+          diagramMarginX:50,
+          diagramMarginY:10,
+          actorMargin:50,
+          width:150,
+          height:65,
+          boxMargin:10,
+          boxTextMargin:5,
+          noteMargin:10,
+          messageMargin:35,
+          messageAlign:'center',
+          mirrorActors:true,
+          bottomMarginAdj:1,
+          useMaxWidth:true,
+          rightAngles:false,
+          showSequenceNumbers:false,
+        },
+        gantt:{
+          titleTopMargin:25,
+          barHeight:20,
+          barGap:4,
+          topPadding:50,
+          leftPadding:75,
+          gridLineStartPadding:35,
+          fontSize:11,
+          fontFamily:'"Open-Sans", "sans-serif"',
+          numberSectionStyles:4,
+          axisFormat:'%Y-%m-%d',
+        }
+      };
+      mermaid.initialize(config);
+    }
+  </script>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'default',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>

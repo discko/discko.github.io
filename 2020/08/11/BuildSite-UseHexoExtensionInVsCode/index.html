@@ -28,7 +28,7 @@
 <meta property="og:description" content="在写hexo的md时，如果要预览文章，要么是通过hexo s开启一个服务，在浏览器中本地浏览，要么就直接通过hexo d -g发布到服务器上。前者总是占用着本地资源，而且三天两头才写一篇文章的话，很容易会忘记首先要打开hexo s；后者的话，就更麻烦了。为了解决这个问题，在VS Code的插件市场中苦苦寻觅，终于找到了一个还算不错的办法。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-08-11T05:18:45.000Z">
-<meta property="article:modified_time" content="2020-08-12T04:56:34.979Z">
+<meta property="article:modified_time" content="2020-10-14T06:16:36.625Z">
 <meta property="article:author" content="吴迪">
 <meta property="article:tag" content="建站">
 <meta property="article:tag" content="hexo">
@@ -193,7 +193,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-08-12 12:56:34" itemprop="dateModified" datetime="2020-08-12T12:56:34+08:00">2020-08-12</time>
+                <time title="修改时间：2020-10-14 14:16:36" itemprop="dateModified" datetime="2020-10-14T14:16:36+08:00">2020-10-14</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -237,7 +237,7 @@
 这时，就可以打开任意md文件，以启动预览窗口。（可能需要重启vs code）</li>
 </ul>
 <h1 id="调整renderer"><span class="post-title-index">2. </span><a href="#调整renderer" class="headerlink" title="调整renderer"></a>调整renderer</h1><p>然后根据数学公式使用的渲染器考量是否需要修改。找到Math Rendering Options，默认采用的是KaTex。由于我Hexo中使用的是MathJax，因此这里改成了MathJax。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.mathRenderingOption": "MathJax"</span><br></pre></td></tr></table></figure></p>
-<h1 id="替换renderer为pandoc"><span class="post-title-index">3. </span><a href="#替换renderer为pandoc" class="headerlink" title="替换renderer为pandoc"></a>替换renderer为pandoc</h1><p>这里需要修改1~2个地方。首先将设置拉到最下面，倒数第3个选项，勾选Use Pandoc Parser，以替代原本的markdown-it。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.pandocPath": "pandoc"</span><br></pre></td></tr></table></figure><br>然后确认Pandoc Path是否正确。如果你的Pandoc是全局安装的，那么这里直接写”pandoc”就可以了。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.pandocPath": "pandoc"</span><br></pre></td></tr></table></figure></p>
+<h1 id="替换renderer为pandoc"><span class="post-title-index">3. </span><a href="#替换renderer为pandoc" class="headerlink" title="替换renderer为pandoc"></a>替换renderer为pandoc</h1><p>如果使用了pandoc作为渲染器的话，那么就需要修改以下内容，以求md preview中的效果和最终效果尽量一致。<br>这里需要修改1~2个地方。首先将设置拉到最下面，倒数第3个选项，勾选Use Pandoc Parser，以替代原本的markdown-it。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.pandocPath": "pandoc"</span><br></pre></td></tr></table></figure><br>然后确认Pandoc Path是否正确。如果你的Pandoc是全局安装的，那么这里直接写”pandoc”就可以了。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.pandocPath": "pandoc"</span><br></pre></td></tr></table></figure><br>pandoc的安装很简单，在<a href="https://www.pandoc.org/installing.html" target="_blank" rel="noopener">Pandoc官网</a>下载和系统一致的版本，重启VS code即可。</p>
 <h1 id="调整界面样式"><span class="post-title-index">4. </span><a href="#调整界面样式" class="headerlink" title="调整界面样式"></a>调整界面样式</h1><p>接着，打开任意一个md文件，在预览中观察是否有不舒服的地方（比如我的vs code主题是dark的，但是markdown preview仍然是亮色主题）。这里有几个可以修改的。  </p>
 <h2 id="主要主题"><span class="post-title-index">4.1. </span><a href="#主要主题" class="headerlink" title="主要主题"></a>主要主题</h2><p>在pandocPath设置下一个，可以修改Preview Theme。这里我选用的是atom-dark：<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.previewTheme": "atom-dark.css"</span><br></pre></td></tr></table></figure><br>当然，要是有能力的话，也可以直接修改该css文件的内容（我是真不会），该文件位于：<code>~/.vscode/extensions/shd101wyy.markdown-preview-enhanced-0.5.12/node_modules/@shd101wyy/mume/styles/prism_theme/src</code>。插件版本可能略有差异，如果确定要去修改的话，自己注意好路径。</p>
 <h2 id="代码块主题"><span class="post-title-index">4.2. </span><a href="#代码块主题" class="headerlink" title="代码块主题"></a>代码块主题</h2><p>修改过Preview Theme后，发现使用```包裹起来的代码块背景颜色仍然是白色的，为此，去修改设置。该设置位于插件设置的头部（第6个），Code Block Theme，选择与Preview Theme相协调的配色，或使用auto.css由插件自己选择即可。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"markdown-preview-enhanced.codeBlockTheme": "auto.css"</span><br></pre></td></tr></table></figure></p>
@@ -343,20 +343,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-count">24</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-count">3</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-count">25</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -379,7 +379,7 @@
         
 
         
-  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">苏ICP备17000391号 </a>
+  <div class="beian"><a href="http://beian.miit.gov.cn/" rel="noopener" target="_blank">苏ICP备17000391号 </a>
   </div>
 
 <div class="copyright">
@@ -398,7 +398,60 @@
   <script src='https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js'></script>
   <script>
     if (window.mermaid) {
-      mermaid.initialize();
+      var config = {
+        theme:'default',
+        logLevel:'fatal',
+        securityLevel:'strict',
+        startOnLoad:true,
+        arrowMarkerAbsolute:false,
+
+        er:{
+          diagramPadding:20,
+          layoutDirection:'TB',
+          minEntityWidth:100,
+          minEntityHeight:75,
+          entityPadding:15,
+          stroke:'gray',
+          fill:'honeydew',
+          fontSize:12,
+          useMaxWidth:true,
+        },
+        flowchart:{
+          diagramPadding:8,
+          htmlLabels:true,
+          curve:'linear',
+        },
+        sequence:{
+          diagramMarginX:50,
+          diagramMarginY:10,
+          actorMargin:50,
+          width:150,
+          height:65,
+          boxMargin:10,
+          boxTextMargin:5,
+          noteMargin:10,
+          messageMargin:35,
+          messageAlign:'center',
+          mirrorActors:true,
+          bottomMarginAdj:1,
+          useMaxWidth:true,
+          rightAngles:false,
+          showSequenceNumbers:false,
+        },
+        gantt:{
+          titleTopMargin:25,
+          barHeight:20,
+          barGap:4,
+          topPadding:50,
+          leftPadding:75,
+          gridLineStartPadding:35,
+          fontSize:11,
+          fontFamily:'"Open-Sans", "sans-serif"',
+          numberSectionStyles:4,
+          axisFormat:'%Y-%m-%d',
+        }
+      };
+      mermaid.initialize(config);
     }
   </script>
 

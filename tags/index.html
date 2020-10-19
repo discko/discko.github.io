@@ -179,10 +179,10 @@
       <div class="post-body">
           <div class="tag-cloud">
             <div class="tag-cloud-title">
-              目前共计 13 个标签
+              目前共计 25 个标签
             </div>
             <div class="tag-cloud-tags">
-              <a href="/tags/Array/" style="font-size: 12px; color: #ccc">Array</a> <a href="/tags/BinarySearch/" style="font-size: 12px; color: #ccc">BinarySearch</a> <a href="/tags/DynamicProgramming/" style="font-size: 12px; color: #ccc">DynamicProgramming</a> <a href="/tags/HashTable/" style="font-size: 12px; color: #ccc">HashTable</a> <a href="/tags/LeetCode/" style="font-size: 30px; color: #111">LeetCode</a> <a href="/tags/LinkedList/" style="font-size: 12px; color: #ccc">LinkedList</a> <a href="/tags/Math/" style="font-size: 12px; color: #ccc">Math</a> <a href="/tags/Simulate/" style="font-size: 12px; color: #ccc">Simulate</a> <a href="/tags/Sliding-Window/" style="font-size: 12px; color: #ccc">Sliding Window</a> <a href="/tags/Two-Pointer/" style="font-size: 12px; color: #ccc">Two Pointer</a> <a href="/tags/hexo/" style="font-size: 21px; color: #6f6f6f">hexo</a> <a href="/tags/%E5%BB%BA%E7%AB%99/" style="font-size: 21px; color: #6f6f6f">建站</a> <a href="/tags/%E6%8F%92%E4%BB%B6/" style="font-size: 12px; color: #ccc">插件</a>
+              <a href="/tags/Array/" style="font-size: 16.5px; color: #9d9d9d">Array</a> <a href="/tags/BFS-DFS/" style="font-size: 12px; color: #ccc">BFS/DFS</a> <a href="/tags/BST/" style="font-size: 12px; color: #ccc">BST</a> <a href="/tags/BinarySearch/" style="font-size: 16.5px; color: #9d9d9d">BinarySearch</a> <a href="/tags/BitManipulation/" style="font-size: 12px; color: #ccc">BitManipulation</a> <a href="/tags/CI/" style="font-size: 12px; color: #ccc">CI</a> <a href="/tags/DynamicProgramming/" style="font-size: 16.5px; color: #9d9d9d">DynamicProgramming</a> <a href="/tags/GitHub-Action/" style="font-size: 12px; color: #ccc">GitHub Action</a> <a href="/tags/Greedy/" style="font-size: 21px; color: #6f6f6f">Greedy</a> <a href="/tags/HashTable/" style="font-size: 12px; color: #ccc">HashTable</a> <a href="/tags/Latex/" style="font-size: 12px; color: #ccc">Latex</a> <a href="/tags/LeetCode/" style="font-size: 30px; color: #111">LeetCode</a> <a href="/tags/LinkedList/" style="font-size: 12px; color: #ccc">LinkedList</a> <a href="/tags/Markdown/" style="font-size: 12px; color: #ccc">Markdown</a> <a href="/tags/Math/" style="font-size: 25.5px; color: #404040">Math</a> <a href="/tags/Queue/" style="font-size: 12px; color: #ccc">Queue</a> <a href="/tags/Simulate/" style="font-size: 12px; color: #ccc">Simulate</a> <a href="/tags/Sliding-Window/" style="font-size: 12px; color: #ccc">Sliding Window</a> <a href="/tags/Stack/" style="font-size: 12px; color: #ccc">Stack</a> <a href="/tags/String/" style="font-size: 12px; color: #ccc">String</a> <a href="/tags/Tree/" style="font-size: 16.5px; color: #9d9d9d">Tree</a> <a href="/tags/Two-Pointer/" style="font-size: 12px; color: #ccc">Two Pointer</a> <a href="/tags/hexo/" style="font-size: 21px; color: #6f6f6f">hexo</a> <a href="/tags/%E5%BB%BA%E7%AB%99/" style="font-size: 21px; color: #6f6f6f">建站</a> <a href="/tags/%E6%8F%92%E4%BB%B6/" style="font-size: 12px; color: #ccc">插件</a>
             </div>
           </div>
         
@@ -261,20 +261,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-count">24</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-count">3</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-count">25</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -297,7 +297,7 @@
         
 
         
-  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">苏ICP备17000391号 </a>
+  <div class="beian"><a href="http://beian.miit.gov.cn/" rel="noopener" target="_blank">苏ICP备17000391号 </a>
   </div>
 
 <div class="copyright">
@@ -316,7 +316,60 @@
   <script src='https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js'></script>
   <script>
     if (window.mermaid) {
-      mermaid.initialize();
+      var config = {
+        theme:'default',
+        logLevel:'fatal',
+        securityLevel:'strict',
+        startOnLoad:true,
+        arrowMarkerAbsolute:false,
+
+        er:{
+          diagramPadding:20,
+          layoutDirection:'TB',
+          minEntityWidth:100,
+          minEntityHeight:75,
+          entityPadding:15,
+          stroke:'gray',
+          fill:'honeydew',
+          fontSize:12,
+          useMaxWidth:true,
+        },
+        flowchart:{
+          diagramPadding:8,
+          htmlLabels:true,
+          curve:'linear',
+        },
+        sequence:{
+          diagramMarginX:50,
+          diagramMarginY:10,
+          actorMargin:50,
+          width:150,
+          height:65,
+          boxMargin:10,
+          boxTextMargin:5,
+          noteMargin:10,
+          messageMargin:35,
+          messageAlign:'center',
+          mirrorActors:true,
+          bottomMarginAdj:1,
+          useMaxWidth:true,
+          rightAngles:false,
+          showSequenceNumbers:false,
+        },
+        gantt:{
+          titleTopMargin:25,
+          barHeight:20,
+          barGap:4,
+          topPadding:50,
+          leftPadding:75,
+          gridLineStartPadding:35,
+          fontSize:11,
+          fontFamily:'"Open-Sans", "sans-serif"',
+          numberSectionStyles:4,
+          axisFormat:'%Y-%m-%d',
+        }
+      };
+      mermaid.initialize(config);
     }
   </script>
 
