@@ -44,6 +44,7 @@ graph LR
 请求-->B[Nginx]
 B--Web请求-->Vue项目
 B--RESTful请求-->Tomcat
+linkStyle default stroke:#fff,stroke-width:2px
 ```
 
 # 持续集成与发布 CI/CD
