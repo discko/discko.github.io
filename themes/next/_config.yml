@@ -813,7 +813,7 @@ pdf:
 mermaid:
   enable: true
   # Available themes: default | dark | forest | neutral
-  theme: default
+  theme: forest
   cdn: //cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js
 
 # ---------------------------------------------------------------
