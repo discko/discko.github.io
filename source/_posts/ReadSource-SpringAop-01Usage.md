@@ -35,10 +35,10 @@ mathjax: false
 ```
 ## 创建需要被插入切面的Controller
 ```java
-package space.wudi.readsourceaop.controller;
+package space.wudi.readsourceaop.jdkdynamicproxy.controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-import space.wudi.readsourceaop.bean.User;
+import space.wudi.readsourceaop.jdkdynamicproxy.bean.User;
 @RestController
 public class MyController {
     @GetMapping("/greeting")
@@ -66,13 +66,13 @@ public class MyController {
 ## 添加切面
 接下来，为了测试切面的各个Advice，编写切面类：
 ```java
-package space.wudi.readsourceaop.aspect;
+package space.wudi.readsourceaop.jdkdynamicproxy.aspect;
 
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
 import org.springframework.stereotype.Component;
-import space.wudi.readsourceaop.bean.User;
+import space.wudi.readsourceaop.jdkdynamicproxy.bean.User;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;

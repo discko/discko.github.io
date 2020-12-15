@@ -17,15 +17,15 @@ date: 2020-12-12 10:28:59
 首先根据自己设想的原理来自己实现一个Proxy。
 比如我们有这样一个接口和对应的实现：
 ```java
-//space.wudi.readsourceaop.myproxy.UserServiceImpl
+//space.wudi.readsourceaop.jdkdynamicproxy.myproxy.UserServiceImpl
 package space.wudi.readsourceaop.myproxy;
 import space.wudi.readsourceaop.bean.User;
 public interface UserService {
     User login(String username) throws Throwable;
 }
-//space.wudi.readsourceaop.myproxy.UserServiceImpl
-package space.wudi.readsourceaop.myproxy;
-import space.wudi.readsourceaop.bean.User;
+//space.wudi.readsourceaop.jdkdynamicproxy.myproxy.UserServiceImpl
+package space.wudi.readsourceaop.jdkdynamicproxy.myproxy;
+import space.wudi.readsourceaop.jdkdynamicproxy.bean.User;
 public class UserServiceImpl implements UserService{
     @Override
     public User login(String username) throws Throwable{
@@ -36,9 +36,9 @@ public class UserServiceImpl implements UserService{
 ```
 然后实现代理类：
 ```java
-package space.wudi.readsourceaop.myproxy.proxy;
-import space.wudi.readsourceaop.bean.User;
-import space.wudi.readsourceaop.myproxy.UserService;
+package space.wudi.readsourceaop.jdkdynamicproxy.myproxy.proxy;
+import space.wudi.readsourceaop.jdkdynamicproxy.bean.User;
+import space.wudi.readsourceaop.jdkdynamicproxy.myproxy.UserService;
 import java.util.Arrays;
 public class ProxyUserService implements UserService {
     private UserService targetObject;
@@ -77,11 +77,11 @@ public class ProxyUserService implements UserService {
 ```
 接下来实现入口：
 ```java
-package space.wudi.readsourceaop.myproxy;
+package space.wudi.readsourceaop.jdkdynamicproxy.myproxy;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-import space.wudi.readsourceaop.bean.User;
-import space.wudi.readsourceaop.myproxy.proxy.ProxyUserService;
+import space.wudi.readsourceaop.jdkdynamicproxy.bean.User;
+import space.wudi.readsourceaop.jdkdynamicproxy.myproxy.proxy.ProxyUserService;
 import javax.annotation.PostConstruct;
 @RestController
 public class UseMyProxyController {
@@ -114,7 +114,7 @@ public class UseMyProxyController {
 对应的控制台输出：  
 > in Before with args: [WuDi]  
 > now logging in...  
-> in AfterReturning with args: [WuDi] and rtVal: space.wudi.readsourceaop.bean.User@4c14b089  
+> in AfterReturning with args: [WuDi] and rtVal: space.wudi.readsourceaop.jdkdynamicproxy.bean.User@4c14b089  
 > in After with args: [WuDi]  
 
 同样的，如果不传入username，就会触发NullPointerException，我们来试一下：
@@ -141,7 +141,7 @@ in After with args: [null]
 > in Around before process
 > in Before
 > now logging in...
-> in AfterReturning with rtVal: space.wudi.readsourceaop.bean.User@7abb7e21
+> in AfterReturning with rtVal: space.wudi.readsourceaop.jdkdynamicproxy.bean.User@7abb7e21
 > in After
 > in Around after process
 
@@ -158,9 +158,9 @@ in After with args: [null]
 此时仍然在`processAfter()`方法中，但并未执行`adviseAfter()`。
 
 解释一下各个类的作用：
-`space.wudi.readsourceaop.myproxy.proxy.ProxyAroundUserService`这个类就是代理类，我将几个Advice过程通过Functional接口都留在了这个代理类中了，并通过`AspectProcessor`子类中的`process()`方法去执行流程。  
-而在`space.wudi.readsourceaop.myproxy.MyAspect`类中，创建了这个代理类的bean，通过lambda表达式实现了各个Advice阶段。  
-最后在`space.wudi.readsourceaop.myproxy.UseMyProxyAutowiredController`类中利用`@Autowired`将代理类注入到`UserService userService`这个引用中。  
+`space.wudi.readsourceaop.jdkdynamicproxy.myproxy.proxy.ProxyAroundUserService`这个类就是代理类，我将几个Advice过程通过Functional接口都留在了这个代理类中了，并通过`AspectProcessor`子类中的`process()`方法去执行流程。  
+而在`space.wudi.readsourceaop.jdkdynamicproxy.myproxy.MyAspect`类中，创建了这个代理类的bean，通过lambda表达式实现了各个Advice阶段。  
+最后在`space.wudi.readsourceaop.jdkdynamicproxy.myproxy.UseMyProxyAutowiredController`类中利用`@Autowired`将代理类注入到`UserService userService`这个引用中。  
 
 
 # SpringAOP中代理Proxy的实现方式
@@ -379,7 +379,7 @@ public final class $Proxy62 extends Proxy implements JdkDynamicService, SpringPr
             m0 = Class.forName("java.lang.Object").getMethod("hashCode");
             m1 = Class.forName("java.lang.Object").getMethod("equals", Class.forName("java.lang.Object"));
             m2 = Class.forName("java.lang.Object").getMethod("toString");
-            m3 = Class.forName("space.wudi.readsourceaop.service.JdkDynamicService").getMethod("useJdkDynamicProxy", Class.forName("java.lang.String"));
+            m3 = Class.forName("space.wudi.readsourceaop.jdkdynamicproxy.service.JdkDynamicService").getMethod("useJdkDynamicProxy", Class.forName("java.lang.String"));
             //other mx = Class.forName().getMethod()
         } catch (NoSuchMethodException var2) {
             throw new NoSuchMethodError(var2.getMessage());
@@ -396,7 +396,7 @@ public final class $Proxy62 extends Proxy implements JdkDynamicService, SpringPr
 还是贴一下代码吧。
 首先创建了一个注解，用于标记需要被切入的目标方法：  
 ```java
-package space.wudi.readsourceaop.annotation;
+package space.wudi.readsourceaop.jdkdynamicproxy.annotation;
 import java.lang.annotation.*;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
@@ -406,14 +406,14 @@ public @interface AspectJoinPoint {
 ```
 然后是切面类，没有什么太多需要讲的，`@Pointcut`处使用了`@annotation`去查找相关的切入点：  
 ```java
-package space.wudi.readsourceaop.aspect;
+package space.wudi.readsourceaop.jdkdynamicproxy.aspect;
 import org.aspectj.lang.*;
 import org.aspectj.lang.annotation.*;
 import org.springframework.stereotype.Component;
 @Aspect
 @Component
 public class ServiceAspect {
-    @Pointcut("@annotation(space.wudi.readsourceaop.annotation.AspectJoinPoint)")
+    @Pointcut("@annotation(space.wudi.readsourceaop.jdkdynamicproxy.annotation.AspectJoinPoint)")
     public void pointcut(){}
     @Around("pointcut()")
     public Object around(ProceedingJoinPoint joinPoint) throws Throwable{
@@ -445,14 +445,14 @@ public class ServiceAspect {
 接下来是接口和实现：
 ```java
 //interface
-package space.wudi.readsourceaop.service;
+package space.wudi.readsourceaop.jdkdynamicproxy.service;
 public interface JdkDynamicService {
     String useJdkDynamicProxy(String id);
 }
 //implementation
-package space.wudi.readsourceaop.service;
+package space.wudi.readsourceaop.jdkdynamicproxy.service;
 import org.springframework.stereotype.Service;
-import space.wudi.readsourceaop.annotation.AspectJoinPoint;
+import space.wudi.readsourceaop.jdkdynamicproxy.annotation.AspectJoinPoint;
 @Service
 public class JdkDynamicServiceImpl implements JdkDynamicService {
     @Override
@@ -465,7 +465,7 @@ public class JdkDynamicServiceImpl implements JdkDynamicService {
 ```
 最后在`MyController`中增加了一个API入口，用于调用测试：
 ```java
-// space.wudi.readsourceaop.controller.MyController
+// space.wudi.readsourceaop.jdkdynamicproxy.controller.MyController
 @RestController
 public class MyController {
     //省略其他的API接口
