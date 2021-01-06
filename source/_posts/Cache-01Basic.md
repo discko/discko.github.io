@@ -1,5 +1,5 @@
 ---
-title: 缓存技术-01-些基础知识与基础概念
+title: 缓存技术-01-一些基础知识与基础概念
 tags:
   - 缓存
 categories: 常用缓存技术原理与应用
@@ -151,7 +151,7 @@ list中，一般总是认为左边为前，右边为后。list是有序的，其
     * LRANGE key start end：返回列表中范围内的元素。start和end可为负索引，包含start和end。
     * LINSERT key BEFORE|AFTER pivot element：在list中目标值pivot前（左）或后（右）插入一个元素，只会根据左边首个值为pivot的节点进行操作,**不是根据索引插入**。
     * LREM key count value：删除list中count个值为value的节点。count为正时从前（左）开始找，为负时从后（右）开始找，为0时删除所有。
-    * BLPOP key [key ...] timeout：如果依次查找个列表中，只要有一个存在值，则LPOP，否则阻塞timeout秒直到某个列表中有值（timeout为0时则一直阻塞）。BRPOP同理。
+    * BLPOP key [key ...] timeout：如果依次查找个列表中，只要有一个存在值，则LPOP，否则阻塞timeout秒直到某个列表中有值（timeout为0时则一直阻塞）。BRPOP同理。都是FIFO先到先服务的。
     * LLEN key：统计list中元素个数。
     * LTRIM key start end：将list修建为只剩范围内的元素。也即删除start之前和end之后的元素。剩余list保留start和end。start和end可以负索引。`ltrim key 0 -1`后整个list不变。
 
