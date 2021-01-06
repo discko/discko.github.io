@@ -30,7 +30,7 @@
 <meta property="og:image" content="https://www.wudi.space/2021/01/02/Cache-01Basic/HistoryOfIO.png">
 <meta property="og:image" content="https://www.wudi.space/2021/01/02/Cache-01Basic/RedisDataStructures.png">
 <meta property="article:published_time" content="2021-01-02T05:42:32.000Z">
-<meta property="article:modified_time" content="2021-01-04T10:25:46.161Z">
+<meta property="article:modified_time" content="2021-01-05T01:14:37.448Z">
 <meta property="article:author" content="吴迪">
 <meta property="article:tag" content="缓存">
 <meta name="twitter:card" content="summary">
@@ -194,7 +194,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-01-04 18:25:46" itemprop="dateModified" datetime="2021-01-04T18:25:46+08:00">2021-01-04</time>
+                <time title="修改时间：2021-01-05 09:14:37" itemprop="dateModified" datetime="2021-01-05T09:14:37+08:00">2021-01-05</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -330,7 +330,7 @@
 <li>LRANGE key start end：返回列表中范围内的元素。start和end可为负索引，包含start和end。</li>
 <li>LINSERT key BEFORE|AFTER pivot element：在list中目标值pivot前（左）或后（右）插入一个元素，只会根据左边首个值为pivot的节点进行操作,<strong>不是根据索引插入</strong>。</li>
 <li>LREM key count value：删除list中count个值为value的节点。count为正时从前（左）开始找，为负时从后（右）开始找，为0时删除所有。</li>
-<li>BLPOP key [key …] timeout：如果依次查找个列表中，只要有一个存在值，则LPOP，否则阻塞timeout秒直到某个列表中有值（timeout为0时则一直阻塞）。BRPOP同理。</li>
+<li>BLPOP key [key …] timeout：如果依次查找个列表中，只要有一个存在值，则LPOP，否则阻塞timeout秒直到某个列表中有值（timeout为0时则一直阻塞）。BRPOP同理。都是FIFO先到先服务的。</li>
 <li>LLEN key：统计list中元素个数。</li>
 <li>LTRIM key start end：将list修建为只剩范围内的元素。也即删除start之前和end之后的元素。剩余list保留start和end。start和end可以负索引。<code>ltrim key 0 -1</code>后整个list不变。</li>
 </ul>
@@ -454,7 +454,10 @@
     <a href="/2020/12/26/Concurrent-AQS/" rel="prev" title="多线程与高并发-AQS原理">
       <i class="fa fa-chevron-left"></i> 多线程与高并发-AQS原理
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2021/01/04/Cache-02RedisAdvance/" rel="next" title="缓存技术-02-Redis进阶操作">
+      缓存技术-02-Redis进阶操作 <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -529,7 +532,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">32</span>
+          <span class="site-state-item-count">33</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -542,7 +545,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-count">43</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
