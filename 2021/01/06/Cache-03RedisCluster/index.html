@@ -40,7 +40,7 @@
 <meta property="og:image" content="https://www.wudi.space/2021/01/06/Cache-03RedisCluster/RedisAndProxy.png">
 <meta property="og:image" content="https://www.wudi.space/2021/01/06/Cache-03RedisCluster/RedisClusterSlot.png">
 <meta property="article:published_time" content="2021-01-06T01:34:05.000Z">
-<meta property="article:modified_time" content="2021-01-10T06:46:40.234Z">
+<meta property="article:modified_time" content="2021-01-10T06:50:03.493Z">
 <meta property="article:author" content="吴迪">
 <meta property="article:tag" content="Redis">
 <meta property="article:tag" content="主从复制">
@@ -210,7 +210,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-01-10 14:46:40" itemprop="dateModified" datetime="2021-01-10T14:46:40+08:00">2021-01-10</time>
+                <time title="修改时间：2021-01-10 14:50:03" itemprop="dateModified" datetime="2021-01-10T14:50:03+08:00">2021-01-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -272,11 +272,11 @@
 <p>但无论选择何种方案，最终主机都需要负担读写，也即主机仍然是一个单结点。因此，需要在主机宕机之后，将备机切换为主机，或通过备份机恢复主机，从而达到高可用（High Availability，HA）。  </p>
 <p>为了达到高可用，如果依赖于人，显然是不可靠的。所以会交给程序进行。但如果仅启用单个监控程序，显然又是一个单点问题，所以通常又会采用集群来进行。这样，才能将发生错误的概率降低。</p>
 <pre class="mermaid">graph LR;
-S((想要实现HA))---->A[依靠人力主备恢复]
-A---->B[依赖程序主备恢复]
-B---->C[单一程序存在单点故障可能]
-C---->D[采用集群负责主备恢复]
-D---->F((趋近HA))</pre>
+S((想要实现HA))-->A[依靠人力主备恢复]
+A-->B[依赖程序主备恢复]
+B-->C[单一程序存在单点故障可能]
+C-->D[采用集群负责主备恢复]
+D-->F((趋近HA))</pre>
 
 <p>既然监控是一个集群，那必然存在决策的问题。此时的决策策略是过半数投票。<br>所以通常这样的备份机或者从机的数量是奇数个（举个例子，5台备份机和6台备份机，他们允许自身出现问题的数量都是2台。所以在宕机容忍2台的情况下，5台更经济；而且往往6台比5台出现问题的概率更高）。  </p>
 <h1 id="Redis的主从复制"><span class="post-title-index">2. </span><a href="#Redis的主从复制" class="headerlink" title="Redis的主从复制"></a>Redis的主从复制</h1><p>Redis可以开启主从复制，这使用默认的异步复制，其特点是低延迟和高性能，是弱一致的。  </p>
