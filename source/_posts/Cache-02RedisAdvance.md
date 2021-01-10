@@ -335,7 +335,7 @@ redis.remove(key);
 而在程序运行过程中，应当再开启一个守护线程，在释放锁之前应当不断为lockkey续期，以防锁提前失效。  
 为了提高业务的吞吐性，还可以将这把锁分为读写锁。不过既然已经到这个地步了，就不如直接使用Redisson的ReadWriteLock了（`RReadWriteLock rwlock = redisson.getReadWriteLock(lockkey);`）
 
-
+Redisson读写锁的用法和原理可以参见这位大佬的[博文](http://cache.baiducontent.com/c?m=ZqN0WPpTfiFS4ZdEu8zeKsAgrW96P8pqbiiqzdoWH6rIxYWYBE-q-EnZvtm0NmifDzkCgKnc8XsLVkN1KEdqTe4SsO1NDoqx1xVpOTm_4iEXsD0CrGtNES1rz1s_1rC2IDBu5wZwspbQxFlGPwAyR7YvN1p4kvsB9CCMpObInCy&p=b47cc64ad49a06ea08e291794754&newp=882a9042958918fc57efdd37155f92695d0fc20e3bd6d101298ffe0cc4241a1a1a3aecbf2c211604d0c47b6d04aa4c57e8f73d763d0034f1f689df08d2ecce7e6cc27e&s=cfcd208495d565ef&user=baidu&fm=sc&query=Redisson%B6%C1%D0%B4%CB%F8&qid=b1aeaa41000f500d&p1=3)
 
 
 # Redis持久化

@@ -415,6 +415,9 @@ void ObjectSynchronizer::fast_exit(oop object, BasicLock* lock, TRAPS) {
 
 需要注意的是，处于Contention List、Entry List、Wait Set中的线程都是BLOCKED状态，是系统级的。
 
+### 升级流图
+![Lock Upgradation](Concurrent-InprocessConcurrent/LockUpgradation.png)
+
 ## FAQ
 ### 自旋锁和重量级锁的选择
 什么时候选择自旋锁：执行时间比较短，线程数比较少。
