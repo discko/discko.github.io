@@ -33,7 +33,7 @@
 <meta property="og:image" content="https://www.wudi.space/2021/01/04/Cache-02RedisAdvance/DoubleDeletion.png">
 <meta property="og:image" content="https://www.wudi.space/2021/01/04/Cache-02RedisAdvance/RedisSnapshot.png">
 <meta property="article:published_time" content="2021-01-04T09:27:45.000Z">
-<meta property="article:modified_time" content="2021-01-07T14:20:04.863Z">
+<meta property="article:modified_time" content="2021-01-10T10:59:15.004Z">
 <meta property="article:author" content="吴迪">
 <meta property="article:tag" content="Redis">
 <meta property="article:tag" content="持久化">
@@ -198,7 +198,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-01-07 22:20:04" itemprop="dateModified" datetime="2021-01-07T22:20:04+08:00">2021-01-07</time>
+                <time title="修改时间：2021-01-10 18:59:15" itemprop="dateModified" datetime="2021-01-10T18:59:15+08:00">2021-01-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -282,7 +282,7 @@
 <h3 id="缓存穿透"><span class="post-title-index">5.3.1. </span><a href="#缓存穿透" class="headerlink" title="缓存穿透"></a>缓存穿透</h3><p>访问一个全量数据库中都不存在的key，请求会从缓存直接到穿透到数据库，然后数据库返回null。当高并发同时访问不存在的key，就会有大量的请求穿透到数据库，数据库压力剧增，可能会瘫痪，或影响其他正常流量的访问。</p>
 <p>解决方案：  </p>
 <ol>
-<li>采用布隆过滤器，存储有效的key，拦截无效的key</li>
+<li>采用布隆过滤器，存储有效的key，拦截无效的key（在程序中使用布隆过滤器<code>Guava</code>包中的<code>com.google.common.hash.BloomFilter</code>；可以在程序中使用BF的算法，将bitmap存在Redis中供分布式使用；也可以直接利用Redis的BF模块）</li>
 <li>根据规则，直接过滤肯定无效的请求（比如<code>id&lt;0</code>)</li>
 <li>如果一个key在缓存与数据库中都不存在，可以在缓存中设置key-null，并设置一个较短的过期时间，以防止短期内相同的key打到数据库上（会牺牲一定的准确性，可能造成数据库在过期时间内写入了相关信息，但缓存直接返回了null）</li>
 <li>采用异步更新策略，如果缓存不存在，则直接返回null，然后异步请求数据库，并更新缓存，这样下次请求时，缓存中就有值了（适用于有重试机制的情况）。  </li>
@@ -290,12 +290,12 @@
 <h3 id="缓存击穿"><span class="post-title-index">5.3.2. </span><a href="#缓存击穿" class="headerlink" title="缓存击穿"></a>缓存击穿</h3><p>高并发访问一个数据库中存在，但是缓存中不存在的数据，同样会造成缓存短时内放过大量请求打到数据库上，这些请求的内容往往是相同的。通常会发生在热点数据过期时，或者新生热点时。  </p>
 <p>解决方案：</p>
 <ol>
-<li>设置热点数据不过期（但热点数据有时往往是不可预知的）</li>
-<li>利用后台程序或线程的定时任务，定期更新过期时间（会增加系统复杂度，对固定或人工设置的热点数据相对简单，对动态热点数据要考虑甄别的方法）</li>
-<li>每次获取值时，如果剩余时间不足某个阈值，顺便更新其过期时间。（可能会发生高并发访问一个已过期的数据，则此方法失效）</li>
-<li>利用互斥锁，缓存不存在时，只能由一个线程去访问数据库（程序复杂度提高，可能发生死锁）</li>
+<li>设置热点数据不过期（但热点数据有时往往是不可预知的，而且缓存服务器通常容量有限，不足以支撑所有热点数据永久存放）</li>
+<li>利用后台程序或线程的定时任务，定期更新过期时间（会增加系统复杂度，对固定或人工设置的热点数据相对简单，对动态热点数据要考虑甄别的方法，而且缓存服务器通常容量有限，不足以支撑所有热点数据永久存放）</li>
+<li>每次获取值时，如果剩余时间不足某个阈值，顺便更新其过期时间。（可能会发生高并发访问一个已过期的数据，则此方法失效，而且缓存服务器通常容量有限，不足以支撑所有热点数据永久存放）</li>
+<li>利用互斥锁，缓存不存在时，只能由一个线程去访问数据库（程序复杂度提高）</li>
 </ol>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> <span class="keyword">int</span> EXPIRE_TIME;    <span class="comment">// 空值或热值的过期时长</span></span><br><span class="line"><span class="keyword">final</span> <span class="keyword">int</span> WAIT_TIME;      <span class="comment">// 阻塞时的等待时长</span></span><br><span class="line"><span class="keyword">final</span> <span class="keyword">int</span> MAX_RETRY_TIME; <span class="comment">// 阻塞时最大重试次数</span></span><br><span class="line">ReentrantLock dataLock;</span><br><span class="line"><span class="function"><span class="keyword">public</span> Data <span class="title">getData</span><span class="params">(String key)</span></span>&#123;</span><br><span class="line">  <span class="keyword">return</span> getData(key, <span class="number">0</span>); <span class="comment">// 调用内部方法</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">private</span> Data <span class="title">getData</span><span class="params">(String key, <span class="keyword">int</span> n)</span></span>&#123;</span><br><span class="line">  Data data = redis.getData(key);</span><br><span class="line">  <span class="keyword">if</span>(data != <span class="keyword">null</span>)&#123;</span><br><span class="line">    <span class="keyword">return</span> data;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span>(dataLock.tryLock())&#123;</span><br><span class="line">    <span class="comment">// 获取到锁</span></span><br><span class="line">    <span class="keyword">try</span>&#123;</span><br><span class="line">      data = db.getData(key);</span><br><span class="line">      <span class="comment">// redis.set(key, data, EXPIRE_TIME);  //根据需要放入缓存</span></span><br><span class="line">      <span class="keyword">return</span> data;  <span class="comment">// 返回从数据库中查询到的值</span></span><br><span class="line">    &#125;<span class="keyword">finally</span>&#123;</span><br><span class="line">      dataLock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">    <span class="comment">// 有别人正在数据库中查询</span></span><br><span class="line">    Thread.sleep(WAIT_TIME);  <span class="comment">// 等别人查好</span></span><br><span class="line">    <span class="keyword">if</span>(lock.getHoldCount() &gt; <span class="number">0</span>)&#123;</span><br><span class="line">      <span class="comment">// 如果锁仍然被占着</span></span><br><span class="line">      <span class="keyword">if</span>(n &lt; MAX_RETRY_TIME)&#123;</span><br><span class="line">        <span class="comment">// 继续重试</span></span><br><span class="line">        <span class="keyword">return</span> getData(key, n+<span class="number">1</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">// 强行访问数据库 </span></span><br><span class="line">      <span class="comment">// return db.get(key);</span></span><br><span class="line">      <span class="comment">// 或者提前中止 </span></span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    data = redis.get(key);</span><br><span class="line">    <span class="keyword">return</span> data;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> <span class="keyword">int</span> EXPIRE_TIME;<span class="comment">// cache expire time</span></span><br><span class="line"><span class="keyword">final</span> <span class="keyword">int</span> LOCK_EXPIRE_TIME; <span class="comment">// lock expire time</span></span><br><span class="line"><span class="keyword">final</span> <span class="keyword">int</span> WAIT_TIME;  <span class="comment">// sleep time when fail to gain lock</span></span><br><span class="line"><span class="keyword">final</span> <span class="keyword">int</span> WATCH_TIME; <span class="comment">// sleep time of watcher thread</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Data <span class="title">getData</span><span class="params">(String key)</span></span>&#123;</span><br><span class="line">  <span class="keyword">do</span>&#123;</span><br><span class="line">    <span class="comment">// get data</span></span><br><span class="line">    RedisData data = redis.getData(key);</span><br><span class="line">    <span class="keyword">if</span>(data != <span class="keyword">null</span>)&#123;</span><br><span class="line">      <span class="keyword">return</span> data.getData();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// try lock</span></span><br><span class="line">    <span class="keyword">boolean</span> lockSuccess = redis.setnx(<span class="string">"lock:"</span>+key, LOCK_EXPIRE_TIME);</span><br><span class="line">    <span class="keyword">if</span>(!lockSuccess)&#123;</span><br><span class="line">      <span class="comment">// not gain the lock, wait and try again</span></span><br><span class="line">      Thread.sleep(WAIT_TIME);</span><br><span class="line">      <span class="keyword">continue</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// gained lock. </span></span><br><span class="line">    <span class="keyword">final</span> Thread t = Thread.currentThread();</span><br><span class="line">    <span class="comment">// start a thread to renewal lock</span></span><br><span class="line">    Thread watcher = <span class="keyword">new</span> Thread(()-&gt;&#123;</span><br><span class="line">      Thread watchee = t;</span><br><span class="line">      <span class="keyword">while</span>(<span class="keyword">true</span>)&#123;</span><br><span class="line">        <span class="keyword">if</span>(t.isAlive() || redis.getData!=<span class="keyword">null</span>)&#123;</span><br><span class="line">          <span class="keyword">break</span>;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">          redis.expire(<span class="string">"lock:"</span>+key, LOCK_EXPIRE_TIME);</span><br><span class="line">          Thread.sleep(WATCH_TIME);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    watcher.start();</span><br><span class="line">    <span class="comment">// update cache from db</span></span><br><span class="line">    Data dbData = db.get(key);</span><br><span class="line">    redis.setex(key, dbData, EXPIRE_TIME);</span><br><span class="line">    <span class="keyword">return</span> dbData;</span><br><span class="line">  &#125;<span class="keyword">while</span>(<span class="keyword">true</span>;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h3 id="缓存雪崩"><span class="post-title-index">5.3.3. </span><a href="#缓存雪崩" class="headerlink" title="缓存雪崩"></a>缓存雪崩</h3><p>缓存雪崩是指在短时间内，有大量缓存失效，导致原本可以通过缓存拦截的请求，一下子都达到数据库上，这些请求往往是不同的。通常是发生在批量设置的热点数据过期时，或者缓存服务意外宕机时。  </p>
 <p>数据查询过程通常由这么几个服务器参与，最前端的Nginx服务器负责请求转发，缓存服务器负责向缓存进程发送指令，数据服务器向数据库发送指令。</p>
 <p>根据缓存进程或集群宕机，或者缓存集中失效，可能会从下面的1或者2开始导致整个服务链雪崩：</p>
@@ -309,10 +309,10 @@
 <p>解决方案：<br>针对缓存进程崩溃：<br>事前：针对缓存进程崩溃，可采用缓存集群或哨兵。<br>事中：多级缓存能多撑一会儿是一会儿，以及通过服务降级来避免数据库等其他服务被打死<br>事后：尽快恢复缓存服务</p>
 <p>针对缓存集中失效：</p>
 <ol>
-<li>缓存数据的过期时间设置随机，防止同一时间大量数据过期现象发生</li>
+<li>缓存数据的过期时间设置随机，防止同一时间大量数据过期现象发生（如果允许随机过期时间，或者对数据一致性要求不是很高的话）</li>
 <li>将热点数据均匀分布在不同的缓存库中</li>
 <li>设置热点数据永远不过期</li>
-<li>通过各种粒度的锁（如根据业务类型）或各种类型的锁（信号量允许并发、互斥锁只允许1个等）控制吞吐量</li>
+<li>通过各种粒度的锁（如根据业务类型）或各种类型的锁（信号量允许并发、互斥锁只允许1个等）甚至分布式锁控制吞吐量<br>也就是说2、3、4（在不允许随机过期的情况下）跟缓存击穿的应对思路上是基本一致的。</li>
 </ol>
 <h3 id="区别"><span class="post-title-index">5.3.4. </span><a href="#区别" class="headerlink" title="区别"></a>区别</h3><p>缓存穿透是指在缓存与数据库中都没有要查询的数据的情况。也就是大量垃圾请求打在数据库上。<br>缓存击穿是指数据库中存在，但是缓存中没有，这时并发向数据库请求相同的数据。也就是同一个热点数据高密度砸向数据库。<br>缓存雪崩是指缓存中本来有，但是在短时间内突然大量失效，导致大量不同的请求同时打到数据库上，并雪崩式导致其他服务不可用。也就是不同的热点数据打到数据库上。</p>
 <h3 id="缓存（与数据库）双写一致性"><span class="post-title-index">5.3.5. </span><a href="#缓存（与数据库）双写一致性" class="headerlink" title="缓存（与数据库）双写一致性"></a>缓存（与数据库）双写一致性</h3><p>前面3个问题都是缓存获取时可能发生的问题。在更新缓存特别是数据库和缓存都需要更新时，同样会出问题。比较重要的就是，同时更新缓存和数据库时，两者的数据不一致的问题，又叫双写一致性问题。  </p>
@@ -346,7 +346,9 @@
 <p>此外还有一些比较geek的操作。因为延迟双删对业务代码的侵入性，有些人想到了监听MySQL的binlog文件。当更新了数据库之后，会体现在binlog文件中，通过某些工具（如Alibaba的canel  [kə’næl]）可以监控binlog中的更新操作，然后另起一个程序订阅canel发现的binlog更新，发现binlog更新后，再计算对应的缓存key并删除之（里面也可以加上删除失败的重试，反正都是写在非业务代码程序中的）。  </p>
 <h4 id="终极解决方案"><span class="post-title-index">5.3.5.6. </span><a href="#终极解决方案" class="headerlink" title="终极解决方案"></a>终极解决方案</h4><p>终极解决方案就是将服务串行化。<br>如果是单机暴露服务，可以直接使用synchronized或者ReentrantLock，甚至将对应的key生成唯一的对象（通过单例工厂）进行单JVM内的上锁。<br>如果服务是分布式的，那可以采用分布式锁（利用Redis即可）。  </p>
 <p>利用setnx指令，设置一个和key相关的lockkey，如果设置成功，则说明锁竞争成功（通过Redis执行指令是串行的来保证）。然后中间执行相关的redis和数据库的业务逻辑操作。接下来在finally中应当删除lockkey这个键来释放锁。<br>为了防止在上锁和解锁之间，程序因为意外而直接中止，应当为lockkey设置一个过期时间，为了保证原子性，可以通过lua脚本进行。<br>而在程序运行过程中，应当再开启一个守护线程，在释放锁之前应当不断为lockkey续期，以防锁提前失效。<br>为了提高业务的吞吐性，还可以将这把锁分为读写锁。不过既然已经到这个地步了，就不如直接使用Redisson的ReadWriteLock了（<code>RReadWriteLock rwlock = redisson.getReadWriteLock(lockkey);</code>）</p>
+<p>总之，核心思路就是通过setnx加锁，设置过期时间防止加锁者崩溃无法释放锁，增加守护竞争续锁防止锁到期在更新redis之前。</p>
 <p>Redisson读写锁的用法和原理可以参见这位大佬的<a href="http://cache.baiducontent.com/c?m=ZqN0WPpTfiFS4ZdEu8zeKsAgrW96P8pqbiiqzdoWH6rIxYWYBE-q-EnZvtm0NmifDzkCgKnc8XsLVkN1KEdqTe4SsO1NDoqx1xVpOTm_4iEXsD0CrGtNES1rz1s_1rC2IDBu5wZwspbQxFlGPwAyR7YvN1p4kvsB9CCMpObInCy&amp;p=b47cc64ad49a06ea08e291794754&amp;newp=882a9042958918fc57efdd37155f92695d0fc20e3bd6d101298ffe0cc4241a1a1a3aecbf2c211604d0c47b6d04aa4c57e8f73d763d0034f1f689df08d2ecce7e6cc27e&amp;s=cfcd208495d565ef&amp;user=baidu&amp;fm=sc&amp;query=Redisson%B6%C1%D0%B4%CB%F8&amp;qid=b1aeaa41000f500d&amp;p1=3" target="_blank" rel="noopener">博文</a></p>
+<p>当然也可以通过Zookeeper来做分布式锁。</p>
 <h1 id="Redis持久化"><span class="post-title-index">6. </span><a href="#Redis持久化" class="headerlink" title="Redis持久化"></a>Redis持久化</h1><p>持久化有2种思路。快照/副本，日志。  </p>
 <h2 id="快照——RDB持久化"><span class="post-title-index">6.1. </span><a href="#快照——RDB持久化" class="headerlink" title="快照——RDB持久化"></a>快照——RDB持久化</h2><p>生成一个RDB文件，里面记录了当前所有内存中的数据。</p>
 <h3 id="方法"><span class="post-title-index">6.1.1. </span><a href="#方法" class="headerlink" title="方法"></a>方法</h3><ul>
@@ -472,20 +474,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">34</span>
+          <span class="site-state-item-count">35</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-count">7</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-count">51</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

