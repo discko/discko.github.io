@@ -170,7 +170,7 @@ maxmemory-policy
 ## Redis缓存时可能遇到的问题
 使用缓存时，大致都会按照这样的逻辑去访问缓存和数据库。
 
-![CacheAndDb](CacheAndDb.png)  
+![CacheAndDb](Cache-02RedisAdvance/CacheAndDb.png)  
 这时，根据缓存中是否有值、缓存放给数据库的访问量、数据库与缓存的双写等过程，将可能存在以下问题。
 
 ### 缓存穿透
@@ -178,7 +178,7 @@ maxmemory-policy
 
 解决方案：  
 
-1. 采用布隆过滤器，存储有效的key，拦截无效的key
+1. 采用布隆过滤器，存储有效的key，拦截无效的key（在程序中使用布隆过滤器`Guava`包中的`com.google.common.hash.BloomFilter`；可以在程序中使用BF的算法，将bitmap存在Redis中供分布式使用；也可以直接利用Redis的BF模块）
 2. 根据规则，直接过滤肯定无效的请求（比如`id<0`)
 3. 如果一个key在缓存与数据库中都不存在，可以在缓存中设置key-null，并设置一个较短的过期时间，以防止短期内相同的key打到数据库上（会牺牲一定的准确性，可能造成数据库在过期时间内写入了相关信息，但缓存直接返回了null）
 4. 采用异步更新策略，如果缓存不存在，则直接返回null，然后异步请求数据库，并更新缓存，这样下次请求时，缓存中就有值了（适用于有重试机制的情况）。  
@@ -188,53 +188,52 @@ maxmemory-policy
 
 解决方案：
 
-1. 设置热点数据不过期（但热点数据有时往往是不可预知的）
-2. 利用后台程序或线程的定时任务，定期更新过期时间（会增加系统复杂度，对固定或人工设置的热点数据相对简单，对动态热点数据要考虑甄别的方法）
-3. 每次获取值时，如果剩余时间不足某个阈值，顺便更新其过期时间。（可能会发生高并发访问一个已过期的数据，则此方法失效）
-4. 利用互斥锁，缓存不存在时，只能由一个线程去访问数据库（程序复杂度提高，可能发生死锁）
+1. 设置热点数据不过期（但热点数据有时往往是不可预知的，而且缓存服务器通常容量有限，不足以支撑所有热点数据永久存放）
+2. 利用后台程序或线程的定时任务，定期更新过期时间（会增加系统复杂度，对固定或人工设置的热点数据相对简单，对动态热点数据要考虑甄别的方法，而且缓存服务器通常容量有限，不足以支撑所有热点数据永久存放）
+3. 每次获取值时，如果剩余时间不足某个阈值，顺便更新其过期时间。（可能会发生高并发访问一个已过期的数据，则此方法失效，而且缓存服务器通常容量有限，不足以支撑所有热点数据永久存放）
+4. 利用互斥锁，缓存不存在时，只能由一个线程去访问数据库（程序复杂度提高）
 
 ```java
-final int EXPIRE_TIME;    // 空值或热值的过期时长
-final int WAIT_TIME;      // 阻塞时的等待时长
-final int MAX_RETRY_TIME; // 阻塞时最大重试次数
-ReentrantLock dataLock;
+final int EXPIRE_TIME;// cache expire time
+final int LOCK_EXPIRE_TIME; // lock expire time
+final int WAIT_TIME;  // sleep time when fail to gain lock
+final int WATCH_TIME; // sleep time of watcher thread
 public Data getData(String key){
-  return getData(key, 0); // 调用内部方法
-}
-private Data getData(String key, int n){
-  Data data = redis.getData(key);
-  if(data != null){
-    return data;
-  }
-  if(dataLock.tryLock()){
-    // 获取到锁
-    try{
-      data = db.getData(key);
-      // redis.set(key, data, EXPIRE_TIME);  //根据需要放入缓存
-      return data;  // 返回从数据库中查询到的值
-    }finally{
-      dataLock.unlock();
+  do{
+    // get data
+    RedisData data = redis.getData(key);
+    if(data != null){
+      return data.getData();
     }
-  }else{
-    // 有别人正在数据库中查询
-    Thread.sleep(WAIT_TIME);  // 等别人查好
-    if(lock.getHoldCount() > 0){
-      // 如果锁仍然被占着
-      if(n < MAX_RETRY_TIME){
-        // 继续重试
-        return getData(key, n+1);
+    // try lock
+    boolean lockSuccess = redis.setnx("lock:"+key, LOCK_EXPIRE_TIME);
+    if(!lockSuccess){
+      // not gain the lock, wait and try again
+      Thread.sleep(WAIT_TIME);
+      continue;
+    }
+    // gained lock. 
+    final Thread t = Thread.currentThread();
+    // start a thread to renewal lock
+    Thread watcher = new Thread(()->{
+      Thread watchee = t;
+      while(true){
+        if(t.isAlive() || redis.getData!=null){
+          break;
+        }else{
+          redis.expire("lock:"+key, LOCK_EXPIRE_TIME);
+          Thread.sleep(WATCH_TIME);
+        }
       }
-      // 强行访问数据库 
-      // return db.get(key);
-      // 或者提前中止 
-      return null;
-    }
-    data = redis.get(key);
-    return data;
-  }
+    });
+    watcher.start();
+    // update cache from db
+    Data dbData = db.get(key);
+    redis.setex(key, dbData, EXPIRE_TIME);
+    return dbData;
+  }while(true;)
 }
 ```
-
 ### 缓存雪崩
 缓存雪崩是指在短时间内，有大量缓存失效，导致原本可以通过缓存拦截的请求，一下子都达到数据库上，这些请求往往是不同的。通常是发生在批量设置的热点数据过期时，或者缓存服务意外宕机时。  
 
@@ -255,10 +254,11 @@ private Data getData(String key, int n){
 事后：尽快恢复缓存服务
 
 针对缓存集中失效：
-1. 缓存数据的过期时间设置随机，防止同一时间大量数据过期现象发生
+1. 缓存数据的过期时间设置随机，防止同一时间大量数据过期现象发生（如果允许随机过期时间，或者对数据一致性要求不是很高的话）
 2. 将热点数据均匀分布在不同的缓存库中
 3. 设置热点数据永远不过期
-4. 通过各种粒度的锁（如根据业务类型）或各种类型的锁（信号量允许并发、互斥锁只允许1个等）控制吞吐量
+4. 通过各种粒度的锁（如根据业务类型）或各种类型的锁（信号量允许并发、互斥锁只允许1个等）甚至分布式锁控制吞吐量
+也就是说2、3、4（在不允许随机过期的情况下）跟缓存击穿的应对思路上是基本一致的。
 
 ### 区别
 缓存穿透是指在缓存与数据库中都没有要查询的数据的情况。也就是大量垃圾请求打在数据库上。  
@@ -335,8 +335,11 @@ redis.remove(key);
 而在程序运行过程中，应当再开启一个守护线程，在释放锁之前应当不断为lockkey续期，以防锁提前失效。  
 为了提高业务的吞吐性，还可以将这把锁分为读写锁。不过既然已经到这个地步了，就不如直接使用Redisson的ReadWriteLock了（`RReadWriteLock rwlock = redisson.getReadWriteLock(lockkey);`）
 
+总之，核心思路就是通过setnx加锁，设置过期时间防止加锁者崩溃无法释放锁，增加守护竞争续锁防止锁到期在更新redis之前。
+
 Redisson读写锁的用法和原理可以参见这位大佬的[博文](http://cache.baiducontent.com/c?m=ZqN0WPpTfiFS4ZdEu8zeKsAgrW96P8pqbiiqzdoWH6rIxYWYBE-q-EnZvtm0NmifDzkCgKnc8XsLVkN1KEdqTe4SsO1NDoqx1xVpOTm_4iEXsD0CrGtNES1rz1s_1rC2IDBu5wZwspbQxFlGPwAyR7YvN1p4kvsB9CCMpObInCy&p=b47cc64ad49a06ea08e291794754&newp=882a9042958918fc57efdd37155f92695d0fc20e3bd6d101298ffe0cc4241a1a1a3aecbf2c211604d0c47b6d04aa4c57e8f73d763d0034f1f689df08d2ecce7e6cc27e&s=cfcd208495d565ef&user=baidu&fm=sc&query=Redisson%B6%C1%D0%B4%CB%F8&qid=b1aeaa41000f500d&p1=3)
 
+当然也可以通过Zookeeper来做分布式锁。
 
 # Redis持久化
 持久化有2种思路。快照/副本，日志。  
