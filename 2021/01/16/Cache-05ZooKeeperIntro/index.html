@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.wudi.space","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Redis是单实例的，因为基于内存，所以速度快。但也是因为基于内存，所以数据持久化是一个问题。因此发展出了主从复制。但是主从复制是异步的，在此过程中数据还是可能丢失（所以在不使用其他技术的情况下，甚至不能说Redis是最终一致性的）。为了提高Redis的可用性，在AKF的X轴方向上可以启用Redis Sentinel，采用监视和投票机制尽力保持始终有Master结点存活（也因此，Spring客户端">
+<meta property="og:type" content="article">
+<meta property="og:title" content="缓存技术-05ZooKeeper介绍">
+<meta property="og:url" content="https://www.wudi.space/2021/01/16/Cache-05ZooKeeperIntro/index.html">
+<meta property="og:site_name" content="吴迪小站">
+<meta property="og:description" content="Redis是单实例的，因为基于内存，所以速度快。但也是因为基于内存，所以数据持久化是一个问题。因此发展出了主从复制。但是主从复制是异步的，在此过程中数据还是可能丢失（所以在不使用其他技术的情况下，甚至不能说Redis是最终一致性的）。为了提高Redis的可用性，在AKF的X轴方向上可以启用Redis Sentinel，采用监视和投票机制尽力保持始终有Master结点存活（也因此，Spring客户端">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.wudi.space/2021/01/16/Cache-05ZooKeeperIntro/zknamespace.jpg">
+<meta property="og:image" content="https://www.wudi.space/2021/01/16/Cache-05ZooKeeperIntro/zkservice.jpg">
+<meta property="og:image" content="https://www.wudi.space/2021/01/16/Cache-05ZooKeeperIntro/NoRouteToHost.png">
+<meta property="og:image" content="https://www.wudi.space/2021/01/16/Cache-05ZooKeeperIntro/ZooKeeperLaunched.png">
+<meta property="og:image" content="https://www.wudi.space/2021/01/16/Cache-05ZooKeeperIntro/TwoStateOfZooKeeper.png">
+<meta property="og:image" content="https://www.wudi.space/2021/01/16/Cache-05ZooKeeperIntro/ZooKeeperFastElection.png">
+<meta property="article:published_time" content="2021-01-16T02:20:33.000Z">
+<meta property="article:modified_time" content="2021-01-21T08:27:36.733Z">
+<meta property="article:author" content="吴迪">
+<meta property="article:tag" content="源码">
+<meta property="article:tag" content="ZooKeeper">
+<meta property="article:tag" content="Paxos">
+<meta property="article:tag" content="ZAB">
+<meta property="article:tag" content="最终一致性">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.wudi.space/2021/01/16/Cache-05ZooKeeperIntro/zknamespace.jpg">
+
+<link rel="canonical" href="https://www.wudi.space/2021/01/16/Cache-05ZooKeeperIntro/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>缓存技术-05ZooKeeper介绍 | 吴迪小站</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">吴迪小站</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.wudi.space/2021/01/16/Cache-05ZooKeeperIntro/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg?raw=true">
+      <meta itemprop="name" content="吴迪">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="吴迪小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          缓存技术-05ZooKeeper介绍
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-01-16 10:20:33" itemprop="dateCreated datePublished" datetime="2021-01-16T10:20:33+08:00">2021-01-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-01-21 16:27:36" itemprop="dateModified" datetime="2021-01-21T16:27:36+08:00">2021-01-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%B8%B8%E7%94%A8%E7%BC%93%E5%AD%98%E6%8A%80%E6%9C%AF%E5%8E%9F%E7%90%86%E4%B8%8E%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">常用缓存技术原理与应用</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Redis是单实例的，因为基于内存，所以速度快。但也是因为基于内存，所以数据持久化是一个问题。因此发展出了主从复制。但是主从复制是异步的，在此过程中数据还是可能丢失（所以在不使用其他技术的情况下，甚至不能说Redis是最终一致性的）。为了提高Redis的可用性，在AKF的X轴方向上可以启用Redis Sentinel，采用监视和投票机制尽力保持始终有Master结点存活（也因此，Spring客户端应当直接连接Sentinel，因为Master掉线就完了，而Redis-cli本身无法直接通过Sentinel对数据存储，只能监听pubsub通道获知Master被切换为了谁）；而在Y轴和Z轴方向上，可以通过Redis Cluster（或者诸如twemproxy、predixy）等方式对数据进行集群式分片，为了更好的实现高可用，还可以增加类似于LVS、keepalived等技术。<br>同样的，Redis集群也可以用作分布式锁。但由于其异步的数据复制原因，实现起来颇为复杂（比如客户端C1申请锁时Master是R1，获得锁成功。但是R1还没有来得及将锁复制给此时还是Slave的R2就挂了。接下来R2被升级为Master，客户端C2来申请同一把锁，就能成功申请到）。  </p>
+<p>而ZooKeeper本身就定位于分布式协调服务，因此利用它来实现分布式锁，比Redis要更为靠谱。<br>先通过本文对ZooKeeper是什么，以及其原理简要了解一下ZooKeeper。而具体应用将放在下一篇文章中。<br><a id="more"></a></p>
+<h1 id="ZooKeeper简介"><span class="post-title-index">1. </span><a href="#ZooKeeper简介" class="headerlink" title="ZooKeeper简介"></a>ZooKeeper简介</h1><h2 id="设计目标"><span class="post-title-index">1.1. </span><a href="#设计目标" class="headerlink" title="设计目标"></a>设计目标</h2><p>从<a href="https://zookeeper.apache.org/doc/current/zookeeperOver.html" target="_blank" rel="noopener">官网的介绍</a>来看，ZooKeeper为分布式应用提供分布式协调服务（A Distributed Coordination Service for Distributed Applications）。<br>其设计目标是简单、可复制、有序、快。  </p>
+<ul>
+<li>简单：通过分层命名空间（类似于文件目录的结构）组织各个层级的数据，每一个结点被称之为<code>znode</code>，可以存放少量数据（少于1MB）。这些<code>znode</code>存放于内存之中。</li>
+<li>可复制：ZK可在一组ZooKeeper间复制（这一组ZK被称为<code>ensemble</code>）。这一组ZK互相知道彼此，它们在内存中维护状态镜像，在持久化存储器上存储事务日志和快照。所以只要大多数ZK结点是可用的，整个ZK服务就是可用的。</li>
+<li>有序：ZK会为每一个事务添加一个顺序戳，通过此可以实现更高级别的功能（例如同步）</li>
+<li>快：ZK在以读为主导的领域非常快。   </li>
+</ul>
+<h2 id="基本结构"><span class="post-title-index">1.2. </span><a href="#基本结构" class="headerlink" title="基本结构"></a>基本结构</h2><p>每一个ZooKeeper内部通过<code>znode</code>来组织命名空间。官网上的<a href="https://zookeeper.apache.org/doc/current/images/zknamespace.jpg" target="_blank" rel="noopener">层次命名空间（Hierarchical Namespace）图</a>如下：<br><img src="/2021/01/16/Cache-05ZooKeeperIntro/zknamespace.jpg" alt="官网的层次命名空间"><br><code>znode</code>会维护一个结构<code>stat</code>，里面存放这个节点的版本信息（每一次更新时这个值都会发生变化）、ACL控制信息（用于限制谁可以做什么）、时间戳。<br>对<code>znode</code>的读写操作都是原子的，读时整个节点都会被读取，写时也会覆盖整个节点的数据。<br>此外，ZK还提供一种临时的节点（ephemeral node），只会存活于Session持续期间。（分布式锁就可以依托于临时节点进行，甚至不需要设置过去时间）  </p>
+<p>对于<code>znode</code>，每一个客户端都可以发起对某个节点的监视<code>watch</code>。当这个节点发生变化时，客户端就可以收到通知，当然在<code>znode</code>改变之后这个<code>watch</code>也随之取消了。（在3.6之后的版本，可以设置永久的、递归的<code>watch</code>，在被监视的节点乃至子节点们发生变化时，客户端都可以收到消息，而且在<code>znode</code>变化后<code>watch</code>不会被取消）</p>
+<p>在集群模式下，ZooKeeper采用简单的主从模型，仅有一个Leader。<a href="https://zookeeper.apache.org/doc/current/images/zkservice.jpg" target="_blank" rel="noopener">官网上的集群结构图</a>如下：<br><img src="/2021/01/16/Cache-05ZooKeeperIntro/zkservice.jpg" alt="官网上的集群结构图">  </p>
+<p>在此模式下，连接集群中的任意结点，都可以进行读操作。但是写操作将会被转移到Leader上进行。<br>正因如此整个集群在运行中会有2种状态：正常模式和无主模式（也就是Leader不可用）。当发现Leader不可用时，整个集群停止外部访问，直到新Leader被推选出现（这个时间通常在200ms以内，<a href="https://zookeeper.apache.org/doc/current/zookeeperOver.html#Reliability" target="_blank" rel="noopener">官网语</a>）。<br>这样一来，通过数据结构，ZooKeeper可以做出如下保证：</p>
+<ul>
+<li>有序一致性：所有从客户端来的更新都会按照发送的顺序进行</li>
+<li>原子性：所有更新要么成功要么失败，没有中间结果</li>
+<li>单系统镜像：无论客户端连接到哪一个ZK结点上（哪怕是因为故障切换到其他结点），它都只会看到一个版本的服务视图（service view）</li>
+<li>持久性：当某一个更新被接受，就会被持久化，直到被覆盖为止</li>
+<li>及时性：ZK能确保数据的最终一致性 </li>
+</ul>
+<h2 id="常用指令"><span class="post-title-index">1.3. </span><a href="#常用指令" class="headerlink" title="常用指令"></a>常用指令</h2><ul>
+<li>create [-s] [-e] [-c] [-t ttl] path [data] [acl]：创建一个位于path的<code>znode</code>结点。-e表示该结点为临时结点。-s表示该结点为存在时为其添加序列后缀。-c表示创建的是一个容器结点（当子节点都被删除后，本节点将会消失，有延时）</li>
+<li>get [-s] [-w] path：获取位于path处的结点。-s显示结点的<code>stat</code>属性（cZxid创建节点的事务ID，ctime创建时间，mZxid最后修改本节点的事务ID，mtime最后修改时间，，pZxid添加或删除直接子节点的事务ID）。-w表示为该节点增加一个监视。  </li>
+<li>set [-s] [-v version] path data：修改path结点的值为data。-s返回其修改后的<code>stat</code>信息。-v version表示此次更新的是<code>stat.dataVersion==version</code>的，如果<code>dataVersion</code>已经不是<code>version</code>时，更新失败。</li>
+<li>delete [-v version] path：删除没有子结点的结点。-v version作用同set。递归删除新版本使用deleteall，旧版本使用rmr，递归删除时无-v version开关。</li>
+</ul>
+<h2 id="主要用法"><span class="post-title-index">1.4. </span><a href="#主要用法" class="headerlink" title="主要用法"></a>主要用法</h2><ul>
+<li>统一配置管理：<code>znode</code>中的数据和<code>watch</code>命令</li>
+<li>分组管理：命名空间</li>
+<li>统一命名： <code>create -s</code></li>
+<li>同步： <code>create -e</code>  </li>
+</ul>
+<h2 id="安装"><span class="post-title-index">1.5. </span><a href="#安装" class="headerlink" title="安装"></a>安装</h2><p>ZooKeeper集群需要多台设备协同（一台也可以，但是弄起来比较麻烦，而虚拟机在配置好之后，可以直接克隆出另外的环境）。在Mac上可以使用VMware Fusion，这个对个人用户是免费使用的：可以点击<a href="https://my.vmware.com/group/vmware/evalcenter?p=fusion-player-personal" target="_blank" rel="noopener">这里</a>进入官网注册和下载页面，获取个人使用的License。（国内区域可能做了跳转，建议通过美国IP进行访问）。当然也可以使用Parallel Desktop，只不过比较贵。Windows上的话，最方便的应该就是VMware Station了。   </p>
+<p>在<a href="https://zookeeper.apache.org/releases.html" target="_blank" rel="noopener">官网下载</a>得到二进制文件后，直接解压就可以使用了。<br>由于ZooKeeper是用Java编写的，所以需要有Java环境，具体安装过程可以参考<a href="https://zookeeper.apache.org/doc/current/zookeeperStarted.html#sc_Download" target="_blank" rel="noopener">官方教程</a>。<br>接下来是配置。ZooKeeper的配置非常简单，只需要将<code>$ZOOKEEPER_HOME/conf</code>下的<code>zoo_sample.cfg</code>复制或改名为<code>zoo.cfg</code>就可以了，主要的几个配置项如下：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">######基本用法######</span></span><br><span class="line"><span class="comment"># 持久化数据存放的位置</span></span><br><span class="line">dataDir=/var/zookeeper/data</span><br><span class="line"><span class="comment"># 客户端连接用的端口号</span></span><br><span class="line">clientPort=2181</span><br><span class="line"></span><br><span class="line"><span class="comment">######时间规则######</span></span><br><span class="line"><span class="comment"># 每一个时钟周期的长度，单位毫秒</span></span><br><span class="line"><span class="comment"># 用于各种心跳。这个值的2倍是session过期的时间</span></span><br><span class="line">tickTime=2000</span><br><span class="line"><span class="comment"># 在启动后连接到Leader前允许的最长时间，单位是时钟周期tickTime的个数 </span></span><br><span class="line"><span class="comment"># 按照当前的配置就是在 10×2000 = 20000 ms 内必须去连接Leader</span></span><br><span class="line">initLimit=10</span><br><span class="line"><span class="comment"># 与Leader的同步通信间隔， 单位是时钟周期tickTime的个数</span></span><br><span class="line"><span class="comment"># sending a request and getting an acknowledgement</span></span><br><span class="line">syncLimit=5</span><br><span class="line"></span><br><span class="line"><span class="comment">######集群配置######</span></span><br><span class="line"><span class="comment">#格式：server.id=host:port1:port2[:observer|participant]</span></span><br><span class="line">server.1=host1:2888:3888</span><br><span class="line">server.2=host2:2888:3888</span><br><span class="line">server.3=host3:2888:3888</span><br><span class="line">server.4=host4:2888:3888:observer</span><br><span class="line">server.5=host5:2888:3888:observer</span><br></pre></td></tr></table></figure><br>其中需要再额外解释一下的就是最下面的集群配置。当单机模式时，这一段是可以省略的。当集群时，就要将所有主机都列出来（当然，在运行时如果需要再添加新结点，要么一个个修改配置文件并一台台重启，要么就使用<code>reconfig add</code>命令添加新结点）。<code>server.id=host:port1:port2[:observer|participant]</code>这个格式中id是设备结点的编号，需要在<code>dataDir</code>中创建一个<code>myid</code>文件，里面只存放本结点的<code>id</code>值；host就是这个节点的ip或者hostname；port1用于集群内各机器通信（Leader监听此端口）；port2用于选举Leader，具体链接方式将在后面详述；最后一个字段表示这个节点的作用，如果可以成为Leader或者参与投票（即角色是Follower），那么就设置为participant（可省略），如果只能作为客户端读数据的端口而没有表决权，则设置为observer。  </p>
+<p>在设置好之后，就可以启动各个节点了。<br>但是我启动之后却在报错：NoRouteToHostException：<br><img src="/2021/01/16/Cache-05ZooKeeperIntro/NoRouteToHost.png" alt="NoRouteToHostException"><br>既然无法连接到其他的主机，通过telnet测试后，同样无法连接到其他结点的2888或3888端口，那就很有可能是防火墙的问题了。<br>由于使用的是CentOS7，默认的防火墙是firewalld，用起来感觉不太会用（后来发现GNOME提供了firewalld的GUI-，-），就直接通过<code>iptables</code>进行配置吧。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 停止firewalld服务</span></span><br><span class="line">systemctl stop firewalld</span><br><span class="line"><span class="comment"># 禁止其开机自动启动</span></span><br><span class="line">systemctl <span class="built_in">disable</span> firewalld</span><br><span class="line"><span class="comment"># 安装iptables，如果没有装的话</span></span><br><span class="line">yum install -y iptables</span><br><span class="line"><span class="comment"># 安装iptables服务</span></span><br><span class="line">yum install iptables-services</span><br><span class="line"><span class="comment"># 查看当前的iptables配置，-n表示列出端口号</span></span><br><span class="line">iptables -L -n</span><br><span class="line"><span class="comment"># 删除所以iptables配置（看需要）</span></span><br><span class="line">iptables -F</span><br><span class="line">iptables -X</span><br><span class="line">iptables -Z</span><br><span class="line"><span class="comment"># 先将INPUT的策略切换为ACCEPT</span></span><br><span class="line">iptables -P INPUT ACCEPT</span><br><span class="line"><span class="comment"># 设置允许本地和ssh访问</span></span><br><span class="line">iptables -A INPUT -i lo -j ACCEPT</span><br><span class="line">iptables -A INPUT -p tcp --dport 22 -j ACCEPT</span><br><span class="line"><span class="comment"># 开启zookeeper端口</span></span><br><span class="line">iptables -A INPUT -p tcp --dport 2181 -j ACCEPT</span><br><span class="line">iptables -A INPUT -p tcp --dport 2888 -j ACCEPT</span><br><span class="line">iptables -A INPUT -p tcp --dport 3888 -j ACCEPT</span><br><span class="line"><span class="comment"># 也可以指定特定的ip</span></span><br><span class="line"><span class="comment">#iptables -A INPUT -p tcp -s $IP --dport $PORT -j ACCEPT</span></span><br><span class="line"><span class="comment"># 将INPUT的策略切换为DROP，OUTPUT的策略切换为ACCEPT</span></span><br><span class="line">iptables -P INPUT DROP</span><br><span class="line">iptables -P OUTPUT ACCEPT</span><br><span class="line"><span class="comment"># 其他iptables的配置随意</span></span><br><span class="line"><span class="comment"># 保存配置</span></span><br><span class="line">server iptables save</span><br><span class="line">systemctl <span class="built_in">enable</span> iptables</span><br><span class="line">systemctl start iptables</span><br></pre></td></tr></table></figure><br>当然也可以直接不启用iptables或者INPUT设置为ACCEPT。<br>这样，zookeeper集群就可以启动了。<br><img src="/2021/01/16/Cache-05ZooKeeperIntro/ZooKeeperLaunched.png" alt="ZooKeeperLaunched">  </p>
+<h1 id="ZooKeeper集群"><span class="post-title-index">2. </span><a href="#ZooKeeper集群" class="headerlink" title="ZooKeeper集群"></a>ZooKeeper集群</h1><p>注：本章中所涉及的源码均来自ZooKeeper的官方GitHub：<a href="https://github.com/apache/zookeeper/blob/master/zookeeper-server/" target="_blank" rel="noopener">https://github.com/apache/zookeeper/blob/master/zookeeper-server/</a>，该master的版本对应于3.8.0-SNAPSHOT。</p>
+<h2 id="一致性算法Paxos"><span class="post-title-index">2.1. </span><a href="#一致性算法Paxos" class="headerlink" title="一致性算法Paxos"></a>一致性算法Paxos</h2><p>基础：抽屉原理：在N个副本中，一次成功更新W个，那么在读取时从超过N-W个副本中读取，就一定能读取到更新后的结果。<br>前提：没有拜占庭将军问题（也就是消息环境是可信的，不会被入侵破坏）。<br>概括：过半回复，两阶段提交（two-phase-commit，2PC，即先准备，再提交）。</p>
+<p>大致过程在<a href="https://www.douban.com/note/208430424" target="_blank" rel="noopener">这篇文章</a>讲得很好。 </p>
+<ol>
+<li>第一阶段——准备。提案者生成（自认为）全局唯一且递增的提案编号<code>ProposalID</code>，向Paxos集群中所有机器广播Prepare请求。</li>
+<li>接受者收到Prepare请求后，判断<code>ProposalID</code>是否比之前已响应的提案编号大。<ul>
+<li>如果是，则更新本地最大的提案编号为<code>ProposalID</code>。然后回复请求，并携带之前接受的提案信息。同时承诺不会接受比<code>ProposalID</code>小的提案。（即如果没有经历过第二阶段提交的提案，则告知没有上一个，否则返回<code>[PreID，PreVal]</code>。</li>
+<li>如果否，则回复错误或者不回复。</li>
+</ul>
+</li>
+<li>当提案者收到超过半数的响应之后。这时就开始进入第二阶段——提交。根据收到的响应进行分类：<ul>
+<li>如果这些响应都没有<code>[PreID]</code>，则提案者将<code>[ProposalID, Value]</code>发送给所有接受者，这个Value是提案者自定义的提案内容。</li>
+<li>如果这些响应中有一些有<code>[PreID]</code>，则提案者将<code>[ProposalID, Value]</code>发送给所有接受者，这个Value是收到的<code>[PreID，PreVal]</code>中<code>PreID</code>最大的那个的<code>PreVal</code>。</li>
+</ul>
+</li>
+<li>当接受者收到后，再次判断<code>ProposalID</code>是否符合现在的承诺。如果符合，则更新自己目前接受的提案编号和提案内容，并回复接受；否则回复错误。</li>
+<li>当提案者收到超过半数的接受后，则认为<code>Value</code>被选定了；否则重新发起新一轮的提案。  </li>
+</ol>
+<p>经过这样的二阶段过程（1、2为第一阶段，3、4、5为第二阶段），就能让大多数结点达成一致意见。<br>但还存在一种特殊情况，比如3个提案者分别先被3个接受者同意，当3个提案者都开始谋求过半时会造成活锁。<br>因此一个解决方案就是限制只能有1个提案者。</p>
+<h2 id="ZAB协议"><span class="post-title-index">2.2. </span><a href="#ZAB协议" class="headerlink" title="ZAB协议"></a>ZAB协议</h2><p>ZAB协议即（Zookeeper Atomic Broadcast protocol，原子广播协议）。是ZooKeeper用于分布式服务协调的核心算法，借鉴了Paxos协议。<br>ZAB协议主要应用于ZooKeeper的两个状态下，在集群正常时通过ZAB协议进行消息广播，在Leader崩溃时（或失联等异常情况下）通过ZAB协议进行崩溃恢复。  </p>
+<p><img src="/2021/01/16/Cache-05ZooKeeperIntro/TwoStateOfZooKeeper.png" alt="TwoStateOfZooKeeper"><br>上图中左边就是正常情况下的ZooKeeper。Client可以连接任意一个ZooKeeper服务器（Leader或者Follower都可以）。当读取时，直接返回（或者Follower可选择先于Leader同步后再返回）；写时，统一将写任务转移给Leader，Leader再异步地通过ZAB的消息广播将更新的内容同步给各个Follower。<br>上图中右边就是Leader失联后，整个ZooKeeper集群崩溃，无法对外提供任何读写服务（仅能提供部分诸如修改配置、查看状态等功能）。此时通过ZAB协议的崩溃恢复，尽快将集群恢复到左侧的状态（可能会丢失结点）。  </p>
+<p>接下来来看看ZAB协议是如何工作的。  </p>
+<h3 id="Zxid与节点状态"><span class="post-title-index">2.2.1. </span><a href="#Zxid与节点状态" class="headerlink" title="Zxid与节点状态"></a>Zxid与节点状态</h3><p>首先需要明确一点，什么是Zxid。Zxid是ZooKeeper的事务编号，是一个64位的整数，高32位用来存储epoch（纪元，每次重新选举Leader后需要切换成下一个纪元），低32位用于记录该纪元下的counter（事务编号）。<br>有2种情况会触发Leader重选：</p>
+<ol>
+<li>counter记满</li>
+<li>某一时刻无法联系上Leader（掉线或网络故障）或没有Leader（比如重启）</li>
+</ol>
+<p>而每一个节点会在下面4种状态中的几种中来回切换：</p>
+<ol>
+<li>LOOKING：表示现在没有Leader，正在选主</li>
+<li>LEADING：表示该结点是Leader结点，可以提供读写服务</li>
+<li>FOLLOWING：表示该结点是Follower结点</li>
+<li>OBSERVING：表示该结点是Observer结点</li>
+</ol>
+<h3 id="崩溃恢复"><span class="post-title-index">2.2.2. </span><a href="#崩溃恢复" class="headerlink" title="崩溃恢复"></a>崩溃恢复</h3><p>崩溃的恢复采用投票的形式决定，选票的结构如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// zookeeper-server/src/main/java/org/apache/zookeeper/server/quorum/Vote.java</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Vote</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> version;</span><br><span class="line">    <span class="comment">// 本选票推举的节点id</span></span><br><span class="line">    <span class="keyword">long</span> id;</span><br><span class="line">    <span class="comment">// 本选票推举的节点的事务编号</span></span><br><span class="line">    <span class="keyword">long</span> zxid;</span><br><span class="line">    <span class="comment">// 记录选举的第次</span></span><br><span class="line">    <span class="keyword">long</span> electionEpoch;</span><br><span class="line">    <span class="comment">// 选票发送节点的状态，可选</span></span><br><span class="line">    ServerState state;</span><br><span class="line">    <span class="comment">// 本选票推举的节点的epoch，也即zxid的高32位</span></span><br><span class="line">    <span class="keyword">long</span> peerEpoch;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>上面是接收的选票结构<code>Notification</code>，发送的数据结构<code>ToSend</code>也是一样的，也就是把<code>QuorumVerifier</code>换成了<code>byte[]</code>。</p>
+<ol>
+<li>当启动或者Leader失联时，发现的节点向所有LOOKING状态的节点通过上面的结构体发送自己的ID与自己的Zxid投票。即第一轮投给自己。  </li>
+<li>收集来自其他服务器的投票</li>
+<li>根据发来的选票看是否需要修改自己的选票</li>
+<li>再次发送选票（可能还是投给自己，可能因为3而修改为头给别人）</li>
+<li>收集来自其他服务器的投票</li>
+<li>如果归票可以发现超过半数的得票者，则选其为Leader。否则回到4再来过。</li>
+</ol>
+<p>下面是ZooKeeper的FastLeaderElection中寻找Leader的核心代码：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// zookeeper-server/src/main/java/org/apache/zookeeper/server/quorum/FastLeaderElection.java</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Vote <span class="title">lookForLeader</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="comment">// 注册JMX</span></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        self.jmxLeaderElectionBean = <span class="keyword">new</span> LeaderElectionBean();</span><br><span class="line">        MBeanRegistry.getInstance().register(self.jmxLeaderElectionBean, self.jmxLocalPeerBean);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        LOG.warn(<span class="string">"Failed to register with JMX"</span>, e);</span><br><span class="line">        self.jmxLeaderElectionBean = <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 计算选举耗时</span></span><br><span class="line">    self.start_fle = Time.currentElapsedTime();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 用于记录本路投票中的所有选票，Long为选票来自的节点编号sid，Vote为选票。</span></span><br><span class="line">        Map&lt;Long, Vote&gt; recvset = <span class="keyword">new</span> HashMap&lt;Long, Vote&gt;();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 当本节点在FOLLOWING或者LEADING时，仍然可能收到之前的以前选举时发来的选票，存放在这个集合里。只用于选票投出节点在FOLLOWING或LEADING状态。用于本节点加入一个正在或刚刚确立Leader的集群中</span></span><br><span class="line">        Map&lt;Long, Vote&gt; outofelection = <span class="keyword">new</span> HashMap&lt;Long, Vote&gt;();</span><br><span class="line">        <span class="comment">// 初始化超时时间</span></span><br><span class="line">        <span class="keyword">int</span> notTimeout = minNotificationInterval;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 本节点的第一个选票设为自己</span></span><br><span class="line">        <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">            logicalclock.incrementAndGet(); <span class="comment">// 更新投票第次</span></span><br><span class="line">            updateProposal(getInitId(), getInitLastLoggedZxid(), getPeerEpoch());</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        LOG.info(<span class="string">"New election. My id = &#123;&#125;, proposed zxid=0x&#123;&#125;"</span>, self.getId(), Long.toHexString(proposedZxid));</span><br><span class="line">        <span class="comment">// 广播选票，包括自己也会收到</span></span><br><span class="line">        sendNotifications();</span><br><span class="line"></span><br><span class="line">        SyncedLearnerTracker voteSet;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 循环，直到本节点的状态不再是LOOKING，也就是本节点选择LEADER后停止</span></span><br><span class="line">        <span class="keyword">while</span> ((self.getPeerState() == ServerState.LOOKING) &amp;&amp; (!stop)) &#123;</span><br><span class="line">            <span class="comment">// 从收到的选票队列中获取一个，阻塞</span></span><br><span class="line">            Notification n = recvqueue.poll(notTimeout, TimeUnit.MILLISECONDS);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (n == <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="comment">// 如果接受队列recvqueue为空</span></span><br><span class="line">                <span class="keyword">if</span> (manager.haveDelivered()) &#123;</span><br><span class="line">                    <span class="comment">// 发送队列为空，则再次发送本节点的选票</span></span><br><span class="line">                    sendNotifications();</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    <span class="comment">// 发送队列不为空，则尝试连接，看看有没有掉线的节点</span></span><br><span class="line">                    manager.connectAll();</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 延长1倍阻塞等待的时间</span></span><br><span class="line">                <span class="keyword">int</span> tmpTimeOut = notTimeout * <span class="number">2</span>;</span><br><span class="line">                notTimeout = Math.min(tmpTimeOut, maxNotificationInterval);</span><br><span class="line">                LOG.info(<span class="string">"Notification time out: &#123;&#125;"</span>, notTimeout);</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (validVoter(n.sid) &amp;&amp; validVoter(n.leader)) &#123;</span><br><span class="line">                <span class="comment">// 根据收到的新选票的发出者的节点状态switch</span></span><br><span class="line">                <span class="keyword">switch</span> (n.state) &#123; </span><br><span class="line">                <span class="keyword">case</span> LOOKING:</span><br><span class="line">                    <span class="keyword">if</span> (getInitLastLoggedZxid() == -<span class="number">1</span>) &#123;</span><br><span class="line">                        LOG.debug(<span class="string">"Ignoring notification as our zxid is -1"</span>);</span><br><span class="line">                        <span class="keyword">break</span>;  <span class="comment">// continue while</span></span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">if</span> (n.zxid == -<span class="number">1</span>) &#123;</span><br><span class="line">                        LOG.debug(<span class="string">"Ignoring notification from member with -1 zxid &#123;&#125;"</span>, n.sid);</span><br><span class="line">                        <span class="keyword">break</span>; <span class="comment">// continue while</span></span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">if</span> (n.electionEpoch &gt; logicalclock.get()) &#123;</span><br><span class="line">                        <span class="comment">// 如果来票的选举轮数比本机选举轮数大，说明本节点慢了</span></span><br><span class="line">                        <span class="comment">// 则更新本机选举轮数，并清空选票集合</span></span><br><span class="line">                        logicalclock.set(n.electionEpoch);</span><br><span class="line">                        recvset.clear();</span><br><span class="line">                        <span class="keyword">if</span> (totalOrderPredicate(n.leader, n.zxid, n.peerEpoch, getInitId(), getInitLastLoggedZxid(), getPeerEpoch())) &#123;</span><br><span class="line">                            <span class="comment">// 如果新选票的leader更好，则修改本节点的leader建议</span></span><br><span class="line">                            updateProposal(n.leader, n.zxid, n.peerEpoch);</span><br><span class="line">                        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                            updateProposal(getInitId(), getInitLastLoggedZxid(), getPeerEpoch());</span><br><span class="line">                        &#125;</span><br><span class="line">                        sendNotifications();</span><br><span class="line">                    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (n.electionEpoch &lt; logicalclock.get()) &#123;</span><br><span class="line">                        <span class="comment">// 这是之前的选举中的选票，抛弃</span></span><br><span class="line">                        LOG.debug(<span class="string">"Notification election epoch is smaller than logicalclock. n.electionEpoch = 0x&#123;&#125;, logicalclock=0x&#123;&#125;"</span>, Long.toHexString(n.electionEpoch), Long.toHexString(logicalclock.get()));</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (totalOrderPredicate(n.leader, n.zxid, n.peerEpoch, proposedLeader, proposedZxid, proposedEpoch)) &#123;</span><br><span class="line">                        <span class="comment">// 如果选票是本次选举的，而新选票中的leader更好</span></span><br><span class="line">                        <span class="comment">// 则修改本结点的leader建议</span></span><br><span class="line">                        updateProposal(n.leader, n.zxid, n.peerEpoch);</span><br><span class="line">                        sendNotifications();</span><br><span class="line">                    &#125;</span><br><span class="line">                    LOG.debug(<span class="string">"Adding vote: from=&#123;&#125;, proposed leader=&#123;&#125;, proposed zxid=0x&#123;&#125;, proposed election epoch=0x&#123;&#125;"</span>, n.sid, n.leader, Long.toHexString(n.zxid), Long.toHexString(n.electionEpoch));</span><br><span class="line">                    <span class="comment">// recvset中存放收到的所有选票</span></span><br><span class="line">                    recvset.put(n.sid, <span class="keyword">new</span> Vote(n.leader, n.zxid, n.electionEpoch, n.peerEpoch));</span><br><span class="line">                    <span class="comment">// voteSet中存放这些选票的quorumVerifier，也就是这些选票是根据哪些节点做出的决定</span></span><br><span class="line">                    voteSet = getVoteTracker(recvset, <span class="keyword">new</span> Vote(proposedLeader, proposedZxid, logicalclock.get(), proposedEpoch));</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">if</span> (voteSet.hasAllQuorums()) &#123;</span><br><span class="line">                        <span class="comment">// 回复已超半数</span></span><br><span class="line">                        <span class="comment">// 再次等待新的选票，超时返回null</span></span><br><span class="line">                        <span class="keyword">while</span> ((n = recvqueue.poll(finalizeWait, TimeUnit.MILLISECONDS)) != <span class="keyword">null</span>) &#123;</span><br><span class="line">                            <span class="keyword">if</span> (totalOrderPredicate(n.leader, n.zxid, n.peerEpoch, proposedLeader, proposedZxid, proposedEpoch)) &#123;</span><br><span class="line">                                <span class="comment">// 如果新的选票更好，则放入recvqueue中，重新while循环判断</span></span><br><span class="line">                                recvqueue.put(n);</span><br><span class="line">                                <span class="keyword">break</span>;  </span><br><span class="line">                            &#125;</span><br><span class="line">                            <span class="comment">// 新的选票没有现在的好，再次等待新的选票，或者超时</span></span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="keyword">if</span> (n == <span class="keyword">null</span>) &#123;</span><br><span class="line">                            <span class="comment">// 没有新的选票了，修改本节点状态（被选为Leader则修改为LEADING，其他的FOLLOWING或者OBSERVING）</span></span><br><span class="line">                            setPeerState(proposedLeader, voteSet);</span><br><span class="line">                            <span class="comment">// 清空recvset，返回最终的选票结果</span></span><br><span class="line">                            Vote endVote = <span class="keyword">new</span> Vote(proposedLeader, proposedZxid, logicalclock.get(), proposedEpoch);</span><br><span class="line">                            leaveInstance(endVote);</span><br><span class="line">                            <span class="keyword">return</span> endVote;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> OBSERVING:</span><br><span class="line">                    <span class="comment">// Observer不参与选举</span></span><br><span class="line">                    LOG.debug(<span class="string">"Notification from observer: &#123;&#125;"</span>, n.sid);</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> FOLLOWING:</span><br><span class="line">                <span class="keyword">case</span> LEADING:</span><br><span class="line">                    <span class="comment">// 如果收到的是LEADING或者FOLLOWING状态的节点发来的选票</span></span><br><span class="line">                    <span class="comment">// 那么说明那个节点已经收到足够多的选票来修改状态了</span></span><br><span class="line">                    <span class="comment">// 如果本节点是同一次选举，则相信它</span></span><br><span class="line">                    <span class="keyword">if</span> (n.electionEpoch == logicalclock.get()) &#123;</span><br><span class="line">                        recvset.put(n.sid, <span class="keyword">new</span> Vote(n.leader, n.zxid, n.electionEpoch, n.peerEpoch, n.state));</span><br><span class="line">                        voteSet = getVoteTracker(recvset, <span class="keyword">new</span> Vote(n.version, n.leader, n.zxid, n.electionEpoch, n.peerEpoch, n.state));</span><br><span class="line">                        <span class="keyword">if</span> (voteSet.hasAllQuorums() &amp;&amp; checkLeader(recvset, n.leader, n.electionEpoch)) &#123;</span><br><span class="line">                            setPeerState(n.leader, voteSet);</span><br><span class="line">                            Vote endVote = <span class="keyword">new</span> Vote(n.leader, n.zxid, n.electionEpoch, n.peerEpoch);</span><br><span class="line">                            leaveInstance(endVote);</span><br><span class="line">                            <span class="keyword">return</span> endVote;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="comment">// 记录选举外的选票。当加入一个已经建立好的集群，要确认大多数结点都选择了同一个Leader</span></span><br><span class="line">                    outofelection.put(n.sid, <span class="keyword">new</span> Vote(n.version, n.leader, n.zxid, n.electionEpoch, n.peerEpoch, n.state));</span><br><span class="line">                    voteSet = getVoteTracker(outofelection, <span class="keyword">new</span> Vote(n.version, n.leader, n.zxid, n.electionEpoch, n.peerEpoch, n.state));</span><br><span class="line">                    <span class="keyword">if</span> (voteSet.hasAllQuorums() &amp;&amp; checkLeader(outofelection, n.leader, n.electionEpoch)) &#123;</span><br><span class="line">                        <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">                            logicalclock.set(n.electionEpoch);</span><br><span class="line">                            setPeerState(n.leader, voteSet);</span><br><span class="line">                        &#125;</span><br><span class="line">                        Vote endVote = <span class="keyword">new</span> Vote(n.leader, n.zxid, n.electionEpoch, n.peerEpoch);</span><br><span class="line">                        leaveInstance(endVote);</span><br><span class="line">                        <span class="keyword">return</span> endVote;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">default</span>:</span><br><span class="line">                    LOG.warn(<span class="string">"Notification state unrecognized: &#123;&#125; (n.state), &#123;&#125;(n.sid)"</span>, n.state, n.sid);</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                &#125; <span class="comment">// end of switch</span></span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// 如果选票无效</span></span><br><span class="line">                <span class="keyword">if</span> (!validVoter(n.leader)) &#123;</span><br><span class="line">                    LOG.warn(<span class="string">"Ignoring notification for non-cluster member sid &#123;&#125; from sid &#123;&#125;"</span>, n.leader, n.sid);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (!validVoter(n.sid)) &#123;</span><br><span class="line">                    LOG.warn(<span class="string">"Ignoring notification for sid &#123;&#125; from non-quorum member sid &#123;&#125;"</span>, n.leader, n.sid);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="comment">// end of while</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="comment">// 注销JMX</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (self.jmxLeaderElectionBean != <span class="keyword">null</span>) &#123;</span><br><span class="line">                MBeanRegistry.getInstance().unregister(self.jmxLeaderElectionBean);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            LOG.warn(<span class="string">"Failed to unregister with JMX"</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line">        self.jmxLeaderElectionBean = <span class="keyword">null</span>;</span><br><span class="line">        LOG.debug(<span class="string">"Number of connection processing threads: &#123;&#125;"</span>, manager.getConnectionThreadCount());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>从这里可以看到，其大致的流程是这样的。  </p>
+<ol>
+<li>开始一次新的选举，electionEpoch自增1。然后将自己作为Leader候选人。</li>
+<li>广播一张给本节点的候选人的选票。  </li>
+<li>然后开始接受选票（包括自己发的这张，以及别的结点发的）在收到有效的选票之后，首先看选票上记录的选举的第次（<code>electionEpoch</code>）。<ul>
+<li>如果是以前的选举的（小），则抛弃之；</li>
+<li>如果是以后的选举的（大，说明本节点慢了），则修改本节点的选举第次，并清空recvset集合；</li>
+<li>如果相等则第4步。</li>
+</ul>
+</li>
+<li>当收到的选票与本节点的是同一次选举，判断以自己目前的Leader候选人与选票中的候选人哪个更合适作为Leader，将其作为新的候选人。判断的依据：<ul>
+<li>节点的peerEpoch更大的优先（也就是Zxid的高32位），否则</li>
+<li>Zxid更大的优先，否则</li>
+<li>结点的编号更大的优先</li>
+</ul>
+</li>
+<li>如果本节点的候选人发生了变化，则广播自己新的选票</li>
+<li>回到3，直到超时也没有新的选票，进行归票。<ul>
+<li>如果票数没有超过半数Participant，则回到2。否则</li>
+<li>继续7</li>
+</ul>
+</li>
+<li>在确认没有新的选票过来之后，将本节点的候选人选择为新的Leader，同时修改本节点的状态（如果选的自己，则变成LEADING，否则FOLLOWING）。  </li>
+</ol>
+<p>这里有几个关键的函数，一个是判断本节点是否需要将候选人更新为收到的选票上的候选人的<code>totalOrderPredicate</code>，为true则需要更新。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// zookeeper-server/src/main/java/org/apache/zookeeper/server/quorum/FastLeaderElection.java</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">boolean</span> <span class="title">totalOrderPredicate</span><span class="params">(<span class="keyword">long</span> newId, <span class="keyword">long</span> newZxid, <span class="keyword">long</span> newEpoch, <span class="keyword">long</span> curId, <span class="keyword">long</span> curZxid, <span class="keyword">long</span> curEpoch)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (self.getQuorumVerifier().getWeight(newId) == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// 选票的投票节点权重为0，直接false</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 先判断epoch，新选票候选人比本节点候选人的高则为true，低为false，否则</span></span><br><span class="line">    <span class="comment">// 再判断Zxid，新选票候选人比本节点候选的大则为true，小则为false，否则</span></span><br><span class="line">    <span class="comment">// 最后比较两个节点的编号，新选票候选人的节点编号大则为true，小或相等false</span></span><br><span class="line">    <span class="keyword">return</span> ((newEpoch &gt; curEpoch) ||</span><br><span class="line">            ((newEpoch == curEpoch)</span><br><span class="line">                &amp;&amp; ((newZxid &gt; curZxid)</span><br><span class="line">                    || ((newZxid == curZxid)</span><br><span class="line">                        &amp;&amp; (newId &gt; curId)))));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>还有一个是<code>voteSet.hasAllQuorum()</code>判断是否过半，<code>voteSet</code>是一个<code>SyncedLearnerTracker</code>，它调用的<code>QuorumVerifier</code>接口的<code>containQuorum</code>方法，而这个接口通过<code>QuorumMaj</code>类来实现的：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// zookeeper-server/src/main/java/org/apache/zookeeper/server/quorum/SyncedLearnerTracker.java</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">hasAllQuorums</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (QuorumVerifierAcksetPair qvAckset : qvAcksetPairs) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!qvAckset.getQuorumVerifier().containsQuorum(qvAckset.getAckset())) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// zookeeper-server/src/main/java/org/apache/zookeeper/server/quorum/flexible/QuorumMaj.java</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">containsQuorum</span><span class="params">(Set&lt;Long&gt; ackSet)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (ackSet.size() &gt; half);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">QuorumMaj</span><span class="params">(Map&lt;Long, QuorumServer&gt; allMembers)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.allMembers = allMembers;</span><br><span class="line">    <span class="keyword">for</span> (QuorumServer qs : allMembers.values()) &#123;</span><br><span class="line">        <span class="keyword">if</span> (qs.type == LearnerType.PARTICIPANT) &#123;</span><br><span class="line">            votingMembers.put(Long.valueOf(qs.id), qs);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            observingMembers.put(Long.valueOf(qs.id), qs);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    half = votingMembers.size() / <span class="number">2</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>可以看到，half的定义是<code>votingMembers.size()</code>的一半，<code>votingMembers</code>是类型为<code>PARTICIPANT</code>的节点的集合。<br>这个过程就叫做Fast Election。  </p>
+<p><img src="/2021/01/16/Cache-05ZooKeeperIntro/ZooKeeperFastElection.png" alt="ZooKeeperFastElection">   </p>
+<p>然后在此之后，Leader向Follower同步数据。</p>
+<h3 id="消息广播"><span class="post-title-index">2.2.3. </span><a href="#消息广播" class="headerlink" title="消息广播"></a>消息广播</h3><p>消息广播可以认为用于同步写请求，通过以下几步完成：</p>
+<ol>
+<li>Leader在收到Client的写请求后，将该Request作为一个Proposal，并为其分配一个全局唯一的Zxid，然后向集群广播（包括自己）。该广播是通过FIFO的队列进行的，Leader会为每一个节点准备一个队列。</li>
+<li>收到广播的节点，将Proposal以事务日志的形式写入磁盘，成功后向Leader恢复ack。</li>
+<li>Leader收到超过半数的Ack后，再次通过队列广播commit消息（包括Leader自己）</li>
+<li>各节点收到commit消息后，将Proposal提交，完成消息广播过程。  </li>
+</ol>
+<p>在这一过程中，对于任意一个结点，只要任何一步失败了，整个提交过程就结束了。所以对于每一个节点而言，提交过程是原子的，要么成功要么失败，不会有中间过程。</p>
+<h2 id="CAP与BASE"><span class="post-title-index">2.3. </span><a href="#CAP与BASE" class="headerlink" title="CAP与BASE"></a>CAP与BASE</h2><p>CAP理论是说，一个分布式系统不可能同时满足下面3种：</p>
+<ul>
+<li>Consistency，一致性，也就是各个节点数据状态等都是一样的</li>
+<li>Availability，可用性，也就是整个分布式系统总能提供服务</li>
+<li>Partition tolerance，分区容错性，也就是当出现分区（比如网络原因造成部分节点间无法通信，节点宕机也可以看做是分区）时，依然能够以C或A的设计要求提供服务。  </li>
+</ul>
+<p>由于分区是不可避免的，所以P通常是必选的。那么根据设计理念，一个分布式产品通常会在C或A之间选择一个。  </p>
+<p>Redis通过主从异步复制，保证了即使发生分区，也能够快速通过其他节点提供服务，也就是侧重于可用性。但是由于侧重于可用性，就会造成异步复制的间隔中Master宕机就会造成数据丢失，所以Redis的C一致性受到挑战。  </p>
+<p>而ZooKeeper通过ZAB这个原子广播协议，可以保证所有可用节点在同步后数据都是一致的；但是在选举Leader时或者无法选出Leader时，整个集群都无法响应客户端的请求，所以ZooKeeper无法满足A可用性。  </p>
+<p>同时ZooKeeper能够在以下方面保持一致性：</p>
+<ul>
+<li>顺序一致性：来自任意特定客户端的更新，最终都会按其发送的顺序被提交。通过Leader发送Proposal的FIFO队列保证。</li>
+<li>原子性：每个更新要么成功，要么失败。通过ZAB协议保证</li>
+<li>单一系统镜像：一个客户端无论连接哪一个客户端，最终看到的都是一样的视图。通过ZAB的消息广播保证。</li>
+<li>持久性：一个更新一旦成功，就会被永久保存下来（除非被再次修改）。通过事务日志保证。  </li>
+</ul>
+<p>可以看到，在很多方便，ZooKeeper都能保证“最终”一致性。<br>由此引出了BASE理论。  </p>
+<p>BASE理论的核心是，即使无法做到强一致性（Strong Consistency，也即在任何时刻任何客户端都能读到最近一次成功更新的数据），但应用可以根据自身特点，采用适当的方式达到最终一致性（Eventual Consistency，也即用户只能读到某一次更新后的数据，不能保证是最新的，但能保证在一定时间后可以达到强一致的程度，但是这个时间不能保证）。<br>BASE理论的关键点有3个，分别是：  </p>
+<ul>
+<li>Basically Available，基本可用，也就是允许损失一部分可用性（比如响应时间延长、部分功能丧失）</li>
+<li>Soft state，软状态，即允许整个系统的数据存在中间状态（ZooKeeper的原子性是针对每一个节点而言的，这个是针对整个系统而言的），但可以通过同步消除这种软状态</li>
+<li>Eventual consistent，最终一致，在经过一段时间的同步之后，各节点能够达到一致的状态 </li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%BA%90%E7%A0%81/" rel="tag"># 源码</a>
+              <a href="/tags/ZooKeeper/" rel="tag"># ZooKeeper</a>
+              <a href="/tags/Paxos/" rel="tag"># Paxos</a>
+              <a href="/tags/ZAB/" rel="tag"># ZAB</a>
+              <a href="/tags/%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%80%A7/" rel="tag"># 最终一致性</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/01/13/ExperienceOfMinerVirus/" rel="prev" title="云主机被植入挖矿病毒后">
+      <i class="fa fa-chevron-left"></i> 云主机被植入挖矿病毒后
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ZooKeeper简介"><span class="nav-text">1. ZooKeeper简介</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#设计目标"><span class="nav-text">1.1. 设计目标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#基本结构"><span class="nav-text">1.2. 基本结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#常用指令"><span class="nav-text">1.3. 常用指令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#主要用法"><span class="nav-text">1.4. 主要用法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装"><span class="nav-text">1.5. 安装</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ZooKeeper集群"><span class="nav-text">2. ZooKeeper集群</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#一致性算法Paxos"><span class="nav-text">2.1. 一致性算法Paxos</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ZAB协议"><span class="nav-text">2.2. ZAB协议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Zxid与节点状态"><span class="nav-text">2.2.1. Zxid与节点状态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#崩溃恢复"><span class="nav-text">2.2.2. 崩溃恢复</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#消息广播"><span class="nav-text">2.2.3. 消息广播</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CAP与BASE"><span class="nav-text">2.3. CAP与BASE</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="吴迪"
+      src="/images/avatar.jpg?raw=true">
+  <p class="site-author-name" itemprop="name">吴迪</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">56</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://beian.miit.gov.cn/" rel="noopener" target="_blank">苏ICP备17000391号 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2020 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">吴迪</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+
+  <script src='https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      var config = {
+        theme:'default',
+        logLevel:'fatal',
+        securityLevel:'strict',
+        startOnLoad:true,
+        arrowMarkerAbsolute:false,
+
+        er:{
+          diagramPadding:20,
+          layoutDirection:'TB',
+          minEntityWidth:100,
+          minEntityHeight:75,
+          entityPadding:15,
+          stroke:'gray',
+          fill:'honeydew',
+          fontSize:12,
+          useMaxWidth:true,
+        },
+        flowchart:{
+          diagramPadding:8,
+          htmlLabels:true,
+          curve:'linear',
+        },
+        sequence:{
+          diagramMarginX:50,
+          diagramMarginY:10,
+          actorMargin:50,
+          width:150,
+          height:65,
+          boxMargin:10,
+          boxTextMargin:5,
+          noteMargin:10,
+          messageMargin:35,
+          messageAlign:'center',
+          mirrorActors:true,
+          bottomMarginAdj:1,
+          useMaxWidth:true,
+          rightAngles:false,
+          showSequenceNumbers:false,
+        },
+        gantt:{
+          titleTopMargin:25,
+          barHeight:20,
+          barGap:4,
+          topPadding:50,
+          leftPadding:75,
+          gridLineStartPadding:35,
+          fontSize:11,
+          fontFamily:'"Open-Sans", "sans-serif"',
+          numberSectionStyles:4,
+          axisFormat:'%Y-%m-%d',
+        }
+      };
+      mermaid.initialize(config);
+    }
+  </script>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'forest',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+
+  
+
+</body>
+</html>
