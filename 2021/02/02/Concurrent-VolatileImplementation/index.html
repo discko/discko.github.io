@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.wudi.space","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="前面的文章提到了volatile的底层实现是靠在CPU汇编指令上添加LOCK前缀来实现的。接下来来看看具体的过程，并且根据LOCK看看还有什么也可以实现volatile相似的功能。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="多线程与高并发-volatile的底层实现">
+<meta property="og:url" content="https://www.wudi.space/2021/02/02/Concurrent-VolatileImplementation/index.html">
+<meta property="og:site_name" content="吴迪小站">
+<meta property="og:description" content="前面的文章提到了volatile的底层实现是靠在CPU汇编指令上添加LOCK前缀来实现的。接下来来看看具体的过程，并且根据LOCK看看还有什么也可以实现volatile相似的功能。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.wudi.space/2021/02/02/Concurrent-VolatileImplementation/LockInstructionInIA32.png">
+<meta property="og:image" content="https://www.wudi.space/2021/02/02/Concurrent-VolatileImplementation/AtomicWithLock.png">
+<meta property="og:image" content="https://www.wudi.space/2021/02/02/Concurrent-VolatileImplementation/MonitorWithLock.png">
+<meta property="article:published_time" content="2021-02-02T08:19:02.000Z">
+<meta property="article:modified_time" content="2021-02-02T10:45:27.224Z">
+<meta property="article:author" content="吴迪">
+<meta property="article:tag" content="源码">
+<meta property="article:tag" content="多线程">
+<meta property="article:tag" content="volatile">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.wudi.space/2021/02/02/Concurrent-VolatileImplementation/LockInstructionInIA32.png">
+
+<link rel="canonical" href="https://www.wudi.space/2021/02/02/Concurrent-VolatileImplementation/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>多线程与高并发-volatile的底层实现 | 吴迪小站</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">吴迪小站</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.wudi.space/2021/02/02/Concurrent-VolatileImplementation/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg?raw=true">
+      <meta itemprop="name" content="吴迪">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="吴迪小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          多线程与高并发-volatile的底层实现
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-02-02 16:19:02 / 修改时间：18:45:27" itemprop="dateCreated datePublished" datetime="2021-02-02T16:19:02+08:00">2021-02-02</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B8%8E%E9%AB%98%E5%B9%B6%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">多线程与高并发</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>前面的文章提到了volatile的底层实现是靠在CPU汇编指令上添加LOCK前缀来实现的。接下来来看看具体的过程，并且根据LOCK看看还有什么也可以实现volatile相似的功能。</p>
+<a id="more"></a>
+<h1 id="源码跟踪"><span class="post-title-index">1. </span><a href="#源码跟踪" class="headerlink" title="源码跟踪"></a>源码跟踪</h1><p>添加了volatile的field会在编译为字节码后，会增加一个ACC_VOLATILE属性。<br>这条属性在JVM执行是，根据调用的是putfield还是getfield指令会执行这样的操作：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// http://hg.openjdk.java.net/jdk8/jdk8/hotspot/file/87ee5ee27509/src/share/vm/interpreter/bytecodeInterpreter.cpp</span></span><br><span class="line"><span class="comment">// 省略了一些代码</span></span><br><span class="line">BytecodeInterpreter::run(interpreterState istate) &#123;</span><br><span class="line">    <span class="keyword">while</span>(<span class="number">1</span>)&#123;   <span class="comment">// 不断循环取下一个指令</span></span><br><span class="line">        <span class="keyword">switch</span> (istate-&gt;msg()) &#123;</span><br><span class="line">        CASE(_getfield):</span><br><span class="line">        CASE(_getstatic):</span><br><span class="line">          &#123;</span><br><span class="line">            <span class="keyword">if</span> (cache-&gt;is_volatile()) &#123;</span><br><span class="line">                <span class="comment">// volatile下，根据各种类型执行各种读操作</span></span><br><span class="line">                <span class="keyword">if</span> (tos_type == itos) &#123;</span><br><span class="line">                    SET_STACK_INT(obj-&gt;int_field_acquire(field_offset), <span class="number">-1</span>);</span><br><span class="line">                &#125; <span class="keyword">else</span> <span class="keyword">if</span> (xxx) &#123;</span><br><span class="line">                    <span class="comment">// 省略其他类型，都差不多</span></span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// 非volatile下，根据各种类型执行各种读操作</span></span><br><span class="line">                <span class="keyword">if</span> (tos_type == itos) &#123;</span><br><span class="line">                    SET_STACK_INT(obj-&gt;int_field(field_offset), <span class="number">-1</span>);</span><br><span class="line">                &#125; <span class="keyword">else</span> <span class="keyword">if</span> (xxx) &#123;</span><br><span class="line">                    <span class="comment">// 省略其他类型，都差不多</span></span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            UPDATE_PC_AND_CONTINUE(<span class="number">3</span>)</span><br><span class="line">          &#125;</span><br><span class="line">        CASE(_putfield):</span><br><span class="line">        CASE(_putstatic):</span><br><span class="line">          &#123;</span><br><span class="line">            <span class="keyword">if</span> (cache-&gt;is_volatile()) &#123;</span><br><span class="line">                <span class="comment">// volatile下，根据各种类型执行各种读操作</span></span><br><span class="line">                <span class="keyword">if</span> (tos_type == itos) &#123;</span><br><span class="line">                    obj-&gt;release_int_field_put(field_offset, STACK_INT(<span class="number">-1</span>));</span><br><span class="line">                &#125; <span class="keyword">else</span> <span class="keyword">if</span> (xxx) &#123;</span><br><span class="line">                    <span class="comment">// 省略其他类型，都差不多</span></span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">// 注意下面这一行：</span></span><br><span class="line">                OrderAccess::storeload();</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// 非volatile下，根据各种类型执行各种读操作</span></span><br><span class="line">                <span class="keyword">if</span> (tos_type == itos) &#123;</span><br><span class="line">                    obj-&gt;int_field_put(field_offset, STACK_INT(<span class="number">-1</span>));</span><br><span class="line">                &#125; <span class="keyword">else</span> <span class="keyword">if</span> (xxx) &#123;</span><br><span class="line">                    <span class="comment">// 省略其他类型，都差不多</span></span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>在JVM的interceptor（字节码解释）过程中，当getfield和putfield时，都会检查该field是否是volatile的。然后根据field的不同类型，执行不同的指令。对于int类型而言，getfield执行<code>int_field_acquire</code>方法（volatile）或<code>obj_field</code>方法（非volatile）；而putfield执行<code>release_int_field_put</code>（volatile）或<code>int_field_put</code>（非volatile）。并且在putfield的volatile情况下，各种类型的操作执行完成后，都会执行静态方法<code>OrderAccess::storeload()</code>。  </p>
+<p>上面提到的对int类型的操作的源码如下：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// http://hg.openjdk.java.net/jdk8/jdk8/hotspot/file/87ee5ee27509/src/share/vm/oops/oop.inline.hpp</span></span><br><span class="line"><span class="comment">// getfield with volatile</span></span><br><span class="line"><span class="function"><span class="keyword">inline</span> oop <span class="title">oopDesc::obj_field_acquire</span><span class="params">(<span class="keyword">int</span> offset)</span> <span class="keyword">const</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> UseCompressedOops ?</span><br><span class="line">             decode_heap_oop((narrowOop)</span><br><span class="line">               OrderAccess::load_acquire(obj_field_addr&lt;narrowOop&gt;(offset)))</span><br><span class="line">           : decode_heap_oop((oop)</span><br><span class="line">               OrderAccess::load_ptr_acquire(obj_field_addr&lt;oop&gt;(offset)));</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// getfield without volatile</span></span><br><span class="line"><span class="function"><span class="keyword">inline</span> oop <span class="title">oopDesc::obj_field</span><span class="params">(<span class="keyword">int</span> offset)</span> <span class="keyword">const</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> UseCompressedOops ?</span><br><span class="line">    load_decode_heap_oop(obj_field_addr&lt;narrowOop&gt;(offset)) :</span><br><span class="line">    load_decode_heap_oop(obj_field_addr&lt;oop&gt;(offset));</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// putfield with volatile</span></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">oopDesc::release_int_field_put</span><span class="params">(<span class="keyword">int</span> offset, jint contents)</span> </span>&#123;</span><br><span class="line">    OrderAccess::release_store(int_field_addr(offset), contents);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// putfield without volatile</span></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">oopDesc::int_field_put</span><span class="params">(<span class="keyword">int</span> offset, jint contents)</span> </span>&#123;</span><br><span class="line">    *int_field_addr(offset) = contents;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>可以看到，对volatile的field进行操作时，也同样会调用<code>OrderAccess</code>下的静态方法。OrderAccess会根据不同的系统和CPU有不同的实现。下面的是Linux_x86的实现：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// http://hg.openjdk.java.net/jdk8/jdk8/hotspot/file/87ee5ee27509/src/os_cpu/linux_x86/vm/orderAccess_linux_x86.inline.hpp  </span></span><br><span class="line"><span class="comment">// volatile getfield中调用的OrderAccess::load_acquire(jint*)</span></span><br><span class="line"><span class="function"><span class="keyword">inline</span> jint <span class="title">OrderAccess::load_acquire</span><span class="params">(<span class="keyword">volatile</span> jint* p)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> *p;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// volatile putfield中调用的</span></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">OrderAccess::release_store</span><span class="params">(<span class="keyword">volatile</span> jint* p, jint v)</span> </span>&#123;</span><br><span class="line">    *p = v;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// putfield中都会调用的OrderAccess::storeload()</span></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">OrderAccess::storeload</span><span class="params">()</span>  </span>&#123; fence(); &#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">OrderAccess::fence</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (os::is_MP()) &#123;</span><br><span class="line">    <span class="comment">// always use locked addl since mfence is sometimes expensive</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> AMD64</span></span><br><span class="line">    <span class="function">__asm__ <span class="title">volatile</span> <span class="params">(<span class="string">"lock; addl $0,0(%%rsp)"</span> : : : <span class="string">"cc"</span>, <span class="string">"memory"</span>)</span></span>;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">    <span class="function">__asm__ <span class="title">volatile</span> <span class="params">(<span class="string">"lock; addl $0,0(%%esp)"</span> : : : <span class="string">"cc"</span>, <span class="string">"memory"</span>)</span></span>;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>从这里就能看出来，无论是getfield还是putfield，对不同类型的操作指令种都是直接获取值或修改值的。但是在putfield的volatile分支中，最后会执行一条内联汇编：</p>
+<p>内联汇编的基本语法是：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">__asm__ 修饰符 (汇编指令:输入参数:输出参数:被更改资源列表)</span><br></pre></td></tr></table></figure></p>
+<p>所以上面的汇编的大致意思就是：<br>请不要随意优化调整我的汇编（volatile）；<br>请执行语句“lock; addl $0,0(%%rsp)”；<br>在次过程中会修改标志寄存器（“cc”），请输入和输出操作数执行内存读取或写入操作（“memory”）。  </p>
+<p>这里的<code>addl $0,0(%%rsp)</code>本身是没有意义的（寄存器<code>rsp</code>自增立即数0）。</p>
+<p>通过翻阅资料，在单处理器的情况下，CPU都是线性执行指令的。但是在多处理器情况下，单条指令对内存的读或写都可能因为其他寄存器的写而造成干扰。因此需要通过lock指令，让其他CPU暂时无法对内存进行。<br>而根据Inter的<code>Inter 64</code>和<code>IA32</code>指令手册（可以<a href="https://software.intel.com/content/www/us/en/develop/download/intel-64-and-ia-32-architectures-sdm-combined-volumes-1-2a-2b-2c-2d-3a-3b-3c-3d-and-4.html" target="_blank" rel="noopener">在这里下载</a>），lock指令与其他BTS指令一起，在共享内存的环境下，能够对内存地址进行“读取-修改-写入”。（在第3-568页，Vol. 2A）  </p>
+<blockquote>
+<p>perform a read-modify-write operation on a memory location in shared memory environment.  </p>
+</blockquote>
+<p><img src="/2021/02/02/Concurrent-VolatileImplementation/LockInstructionInIA32.png" alt="Lock Instruction In IA32"></p>
+<p>正是因为添加了Lock指令前缀，才让volatile能够在对某个共享变量（对应于共享的内存地址）修改后，立即放回内存中（而不是保存在自己的工作内存中）。这样，就可以利用CPU的无效化队列，在其他线程访问该共享变量在自己线程内的工作空间中的缓存时，知晓缓存已经失效了，直接去内存重新读取。进而达到可见性的目的。  </p>
+<p>而被Lock的那条指令（<code>addl $0,0(%%rsp)</code>），其实换成其他没有副作用的指令也可以，至于为什么不直接使用<code>NOP</code>指令，从手册中对LOCK的解释来看，应该是NOP不支持加LOCK前缀。</p>
+<p>所以总结下来就是JVM在解释字节码时，当发现对volatile进行写操作时，会对其设立StoreLoadFence，而StoreLoadFence通过内联汇编加LOCK前缀，强制刷新内存。  </p>
+<p>与此同时，使用Lock更主要的目的是利用Lock与mfence基本等价，但能避免一些情况下mfence的代价较高的问题。mfence指令是用作形成内存屏障，阻止其前后代码重排序的CPU指令。<br>所以从这个角度来说，不知道应该数volatile在阻止指令重排序的同时，顺便完成了共享变量对各线程可见的需求；还是要说CPU的指令在设计时就将阻止指令重排与内存刷新的功能放在了一起。  </p>
+<h1 id="额外的发现"><span class="post-title-index">2. </span><a href="#额外的发现" class="headerlink" title="额外的发现"></a>额外的发现</h1><p>在查阅源码的过程中，发现了一些比较有意思的东西。</p>
+<ol>
+<li>Atomic类的底层实现中，大多都添加了Lock前缀（见<a href="http://hg.openjdk.java.net/jdk8/jdk8/hotspot/file/87ee5ee27509/src/os_cpu/linux_x86/vm/atomic_linux_x86.inline.hpp" target="_blank" rel="noopener">HotSpot源码</a>）<br><img src="/2021/02/02/Concurrent-VolatileImplementation/AtomicWithLock.png" alt="Atomic With Lock">  </li>
+<li>monitorenter和monitorexit调用了Atomic::cmpxchg（见<a href="http://hg.openjdk.java.net/jdk8/jdk8/hotspot/file/87ee5ee27509/src/share/vm/interpreter/bytecodeInterpreter.cpp" target="_blank" rel="noopener">HotSpot源码</a>）<br><img src="/2021/02/02/Concurrent-VolatileImplementation/MonitorWithLock.png" alt="MonitorWithLock"></li>
+</ol>
+<p>根据上面这两条，我们可以推导出，使用了以下的任意操作，都可以保证共享变量的线程间可见性，同时保证前后操作的有序性：  </p>
+<ol>
+<li>使用Unsafe类下的各种原子操作</li>
+<li>进入和离开synchronized代码块  </li>
+</ol>
+<p>由此，我们可以尝试一下下面的代码（代码位于<a href="https://github.com/discko/learnconcurrent/blob/master/basicconcurrent/src/main/java/space/wudi/learnconcurrent/basicconcurrent/test06/Main06.java" target="_blank" rel="noopener">我的GitHub仓库</a>中）：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Main0204</span> </span>&#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">MyAction</span></span>&#123;</span><br><span class="line">        <span class="comment">/*volatile */</span><span class="keyword">boolean</span> flag = <span class="keyword">true</span>;</span><br><span class="line">        Lock lock = <span class="keyword">new</span> ReentrantLock();</span><br><span class="line">        StringBuffer stringBuffer = <span class="keyword">new</span> StringBuffer();</span><br><span class="line">        StringBuilder stringBuilder = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">        LinkedList&lt;Integer&gt; list = <span class="keyword">new</span> LinkedList&lt;&gt;();</span><br><span class="line">        LinkedBlockingDeque&lt;Integer&gt; lbq = <span class="keyword">new</span> LinkedBlockingDeque&lt;&gt;();</span><br><span class="line">        AtomicInteger integer = <span class="keyword">new</span> AtomicInteger(<span class="number">1</span>);</span><br><span class="line">        <span class="keyword">int</span> a;</span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">fun1</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            System.out.println(Thread.currentThread().getName()+<span class="string">" fun1 loop started"</span>);</span><br><span class="line">            <span class="keyword">while</span> (flag) &#123;</span><br><span class="line"><span class="comment">//                lock.lock(); lock.unlock();</span></span><br><span class="line"><span class="comment">//                Thread.yield();</span></span><br><span class="line"><span class="comment">//                stringBuffer.append("a");</span></span><br><span class="line"><span class="comment">//                stringBuilder.append("a");</span></span><br><span class="line"><span class="comment">//                list.add(1);</span></span><br><span class="line"><span class="comment">//                lbq.add(1);</span></span><br><span class="line"><span class="comment">//                integer.addAndGet(1);</span></span><br><span class="line"><span class="comment">//                a++;</span></span><br><span class="line"><span class="comment">//                System.out.println("running");</span></span><br><span class="line">            &#125;</span><br><span class="line">            System.out.println(Thread.currentThread().getName()+<span class="string">" fun1 loop stopped"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        MyAction a = <span class="keyword">new</span> MyAction();</span><br><span class="line">        Thread t = <span class="keyword">new</span> Thread(a::fun, <span class="string">"Thread-1"</span>);</span><br><span class="line">        t1.start();</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            TimeUnit.MILLISECONDS.sleep(<span class="number">100</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        a.flag = <span class="keyword">false</span>;</span><br><span class="line"><span class="comment">//        System.out.println("change a1.flag to " + a1.flag1);</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在线程内通过一个field <code>flag</code>来控制while循环。同时<code>flag</code>也可以在线程外被访问，也就是说<code>flag</code>是在线程间共享的。如果声明<code>flag</code>为<code>volatile</code>的，那毫无疑问MainThread中的修改对Thread-1是可见的。<br>那么上面的那些推论是否成立呢？  </p>
+<p>于是，将<code>flag</code>的<code>volatile</code>去掉，并添加了各种测试对象，在循环中执行，可以发现：<br>使用了<code>ReentrantLock#lock()</code>（在竞争锁时使用了CAS操作）和<code>AtomicInteger#addAndGet(int)</code>（在设值时使用了CAS操作）、<code>LinkedBlockingDeque#add(T)</code>（方法中调用了<code>ReentrantLock#lock()</code>）等通过Unsafe中的方法进行操作的测试用例，是可以发现flag的变化的。<br>使用了<code>StringBuffer#append(String)</code>（方法被声明为synchronized）、<code>PrintStream#println(String)</code>（方法中包含synchronized块）的测试用例，是可以发现flag的变化的。  </p>
+<p>同时也发现，<code>LinkedList#add(T)</code>和<code>a++</code>是无法发现flag的变化的。<br>这与预期是一致的。  </p>
+<p>当然，仍然有一个问题，为什么<code>StringBuilder.append(String)</code>也可以。通过查看jdk的源码发现其底层调用了<code>System.arraycopy</code>方法：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// java.lang.String#getChars(int, int, char[], int)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">getChars</span><span class="params">(<span class="keyword">int</span> srcBegin, <span class="keyword">int</span> srcEnd, <span class="keyword">char</span> dst[], <span class="keyword">int</span> dstBegin)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 省略校验</span></span><br><span class="line">    System.arraycopy(value, srcBegin, dst, dstBegin, srcEnd - srcBegin);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>在jvm的源码中，这个方法最终调用了<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">Copy::conjoint_memory_atomic</span><span class="params">(<span class="keyword">void</span>* from, <span class="keyword">void</span>* to, <span class="keyword">size_t</span> size)</span> </span>&#123;</span><br><span class="line">    address src = (address) from;</span><br><span class="line">    address dst = (address) to;</span><br><span class="line">    <span class="keyword">uintptr_t</span> bits = (<span class="keyword">uintptr_t</span>) src | (<span class="keyword">uintptr_t</span>) dst | (<span class="keyword">uintptr_t</span>) size;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (bits % <span class="keyword">sizeof</span>(jlong) == <span class="number">0</span>) &#123;</span><br><span class="line">        Copy::conjoint_jlongs_atomic((jlong*) src, (jlong*) dst, size / <span class="keyword">sizeof</span>(jlong));</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (bits % <span class="keyword">sizeof</span>(jint) == <span class="number">0</span>) &#123;</span><br><span class="line">        Copy::conjoint_jints_atomic((jint*) src, (jint*) dst, size / <span class="keyword">sizeof</span>(jint));</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (bits % <span class="keyword">sizeof</span>(jshort) == <span class="number">0</span>) &#123;</span><br><span class="line">        Copy::conjoint_jshorts_atomic((jshort*) src, (jshort*) dst, size / <span class="keyword">sizeof</span>(jshort));</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// Not aligned, so no need to be atomic.</span></span><br><span class="line">        Copy::conjoint_jbytes((<span class="keyword">void</span>*) src, (<span class="keyword">void</span>*) dst, size);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>可以看到，如果目标地址和源地址可以被jlong对齐，那么就用<code>Copy::conjoint_jlongs_atomic</code>拷贝（以jlong为单位64bits）；如果能被jint对其，那么就用<code>Copy::conjoint_jint_atomic</code>拷贝（以jint为单位32bits）；如果能被jshort对其，那么就用<code>Copy::conjoint_jshorts_atomic</code>拷贝（以jshort为单位32bits）；无法对齐那么就1字节1字节地通过<code>Copy::conjoint_jbytes((void*) src, (void*) dst, size)</code>拷贝。<br>可以看到，除了最后一个，名字里都带有“atomic”，猜想也是运用了原子操作，但是源码艰深，实在看不下去了。于是做了个实验，在<code>while(flag)</code>中单独执行<code>System.arraycopy</code>，发现依然可以观察到flag的变化。这样来看的话，StringBuilder虽然不是线程安全的，但是在底层也依然会因为字符拷贝而意外使用内存屏障。<br><code>StringBuilder#append(char)</code>同样也是一样的，别看只添加了1个char进去，但是因为StringBuilder内部的<code>char[] value</code>数组在扩容时，也会通过<code>Arrays.copyOf</code>调用到<code>System.arraycopy</code>，所以依然能够发现flag的变化。<br>最后，尝试使用<code>Builder#setCharAt(int, char)</code>，终于无法发现flag的变化了。  </p>
+<p>差一点忘记了，上面的测试用例中还有一个是<code>Thread.yield()</code>。这个同样能够发现flag的变化。其原因应该与线程切换强制缓存失效（强制刷新缓存）有关。</p>
+<h1 id="一朵疑云"><span class="post-title-index">3. </span><a href="#一朵疑云" class="headerlink" title="一朵疑云"></a>一朵疑云</h1><p>当然在测试中，还发现了一个我解释不了的现象，那就是关于try-catch的。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">funWithTryCatch</span><span class="params">()</span></span>&#123;</span><br><span class="line">    System.out.println(Thread.currentThread().getName()+<span class="string">" funWithTryCatch loop started"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (flag) &#123;</span><br><span class="line">        <span class="keyword">try</span>&#123;</span><br><span class="line">            <span class="comment">// do nothing -&gt; cannot stop</span></span><br><span class="line"><span class="comment">//            throw new Exception();    // throw a exception -&gt; stopped</span></span><br><span class="line"><span class="comment">//            a++;                      // a++ -&gt; cannot stop</span></span><br><span class="line">            list.add(<span class="number">1</span>);                <span class="comment">// some</span></span><br><span class="line">        &#125;<span class="keyword">catch</span>(Exception e)&#123;</span><br><span class="line"><span class="comment">//            a++;</span></span><br><span class="line">            list.add(<span class="number">1</span>);</span><br><span class="line"><span class="comment">//        &#125;finally &#123;</span></span><br><span class="line"><span class="comment">//            a++;</span></span><br><span class="line"><span class="comment">//            list.add(1);</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    System.out.println(Thread.currentThread().getName()+<span class="string">" funWithTryCatch loop stopped"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>当我使用throw exception进行测试时，即使catch中什么都不做，也能发现flag的变化。<br>当我使用a++进行测试时，在try、catch、finally这3个代码块中的任意1个或几个或全部中，添加了a++，都无法发现flag。这也很符合预期。<br>但是，当我使用list.add(1)进行测试时，同样是try、catch、finally这3个代码块，当且仅当try和catch中存在list.add(1)时（finally中有没有都不影响这个现象），能够发现flag的变化，但仅有1个时是无法发现flag变化的。<br>这一点很迷，留作以后有缘再来解答。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%BA%90%E7%A0%81/" rel="tag"># 源码</a>
+              <a href="/tags/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" rel="tag"># 多线程</a>
+              <a href="/tags/volatile/" rel="tag"># volatile</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/01/23/Cache-06ZooKeeperAdvance/" rel="prev" title="缓存技术-05-ZooKeeper使用">
+      <i class="fa fa-chevron-left"></i> 缓存技术-05-ZooKeeper使用
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#源码跟踪"><span class="nav-text">1. 源码跟踪</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#额外的发现"><span class="nav-text">2. 额外的发现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#一朵疑云"><span class="nav-text">3. 一朵疑云</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="吴迪"
+      src="/images/avatar.jpg?raw=true">
+  <p class="site-author-name" itemprop="name">吴迪</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">59</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://beian.miit.gov.cn/" rel="noopener" target="_blank">苏ICP备17000391号 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2020 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">吴迪</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+
+  <script src='https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      var config = {
+        theme:'default',
+        logLevel:'fatal',
+        securityLevel:'strict',
+        startOnLoad:true,
+        arrowMarkerAbsolute:false,
+
+        er:{
+          diagramPadding:20,
+          layoutDirection:'TB',
+          minEntityWidth:100,
+          minEntityHeight:75,
+          entityPadding:15,
+          stroke:'gray',
+          fill:'honeydew',
+          fontSize:12,
+          useMaxWidth:true,
+        },
+        flowchart:{
+          diagramPadding:8,
+          htmlLabels:true,
+          curve:'linear',
+        },
+        sequence:{
+          diagramMarginX:50,
+          diagramMarginY:10,
+          actorMargin:50,
+          width:150,
+          height:65,
+          boxMargin:10,
+          boxTextMargin:5,
+          noteMargin:10,
+          messageMargin:35,
+          messageAlign:'center',
+          mirrorActors:true,
+          bottomMarginAdj:1,
+          useMaxWidth:true,
+          rightAngles:false,
+          showSequenceNumbers:false,
+        },
+        gantt:{
+          titleTopMargin:25,
+          barHeight:20,
+          barGap:4,
+          topPadding:50,
+          leftPadding:75,
+          gridLineStartPadding:35,
+          fontSize:11,
+          fontFamily:'"Open-Sans", "sans-serif"',
+          numberSectionStyles:4,
+          axisFormat:'%Y-%m-%d',
+        }
+      };
+      mermaid.initialize(config);
+    }
+  </script>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'forest',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+
+  
+
+</body>
+</html>
