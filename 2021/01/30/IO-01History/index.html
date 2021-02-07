@@ -22,24 +22,24 @@
 
   <meta name="description" content="在学习缓存的时候，简要认识了一下IO的变迁史。在这篇文章中，将详细介绍一下各个历史阶段中IO的变迁过程。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="IO-01-IO变迁和ByteBuffer">
-<meta property="og:url" content="https://www.wudi.space/2021/01/30/IO-01HistoryAndByteBuffer/index.html">
+<meta property="og:title" content="IO-01-IO变迁">
+<meta property="og:url" content="https://www.wudi.space/2021/01/30/IO-01History/index.html">
 <meta property="og:site_name" content="吴迪小站">
 <meta property="og:description" content="在学习缓存的时候，简要认识了一下IO的变迁史。在这篇文章中，将详细介绍一下各个历史阶段中IO的变迁过程。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://www.wudi.space/2021/01/30/IO-01HistoryAndByteBuffer/MaxOpenFiles.png">
-<meta property="og:image" content="https://www.wudi.space/2021/01/30/IO-01HistoryAndByteBuffer/epollModel.png">
+<meta property="og:image" content="https://www.wudi.space/2021/01/30/IO-01History/MaxOpenFiles.png">
+<meta property="og:image" content="https://www.wudi.space/2021/01/30/IO-01History/epollModel.png">
 <meta property="article:published_time" content="2021-01-30T02:21:19.000Z">
-<meta property="article:modified_time" content="2021-02-07T07:36:21.133Z">
+<meta property="article:modified_time" content="2021-02-07T07:37:59.758Z">
 <meta property="article:author" content="吴迪">
 <meta property="article:tag" content="IO">
 <meta property="article:tag" content="NIO">
 <meta property="article:tag" content="AIO">
 <meta property="article:tag" content="ByteBuffer">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://www.wudi.space/2021/01/30/IO-01HistoryAndByteBuffer/MaxOpenFiles.png">
+<meta name="twitter:image" content="https://www.wudi.space/2021/01/30/IO-01History/MaxOpenFiles.png">
 
-<link rel="canonical" href="https://www.wudi.space/2021/01/30/IO-01HistoryAndByteBuffer/">
+<link rel="canonical" href="https://www.wudi.space/2021/01/30/IO-01History/">
 
 
 <script id="page-configurations">
@@ -52,7 +52,7 @@
   };
 </script>
 
-  <title>IO-01-IO变迁和ByteBuffer | 吴迪小站</title>
+  <title>IO-01-IO变迁 | 吴迪小站</title>
   
 
 
@@ -167,7 +167,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://www.wudi.space/2021/01/30/IO-01HistoryAndByteBuffer/">
+    <link itemprop="mainEntityOfPage" href="https://www.wudi.space/2021/01/30/IO-01History/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg?raw=true">
@@ -180,7 +180,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          IO-01-IO变迁和ByteBuffer
+          IO-01-IO变迁
         </h1>
 
         <div class="post-meta">
@@ -197,7 +197,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-02-07 15:36:21" itemprop="dateModified" datetime="2021-02-07T15:36:21+08:00">2021-02-07</time>
+                <time title="修改时间：2021-02-07 15:37:59" itemprop="dateModified" datetime="2021-02-07T15:37:59+08:00">2021-02-07</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -256,7 +256,7 @@
 <h1 id="NIO——Non-blocking-IO"><span class="post-title-index">3. </span><a href="#NIO——Non-blocking-IO" class="headerlink" title="NIO——Non-blocking IO"></a>NIO——Non-blocking IO</h1><p>于是，非阻塞IO就诞生了。下面先简单展示一下Linux系统提供的api，介绍一下集中NIO方式的变迁过程和特点、原理。然后再用java.nio包下的工具编写Java下的非阻塞IO用例。</p>
 <h2 id="最基本的非阻塞IO"><span class="post-title-index">3.1. </span><a href="#最基本的非阻塞IO" class="headerlink" title="最基本的非阻塞IO"></a>最基本的非阻塞IO</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">serverNonblocked</span><span class="params">(struct sockaddr_in* serverAddr, <span class="keyword">int</span> backlog)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> serverFd;</span><br><span class="line">    <span class="keyword">if</span>((serverFd = socket(PF_INET, SOCK_STREAM, <span class="number">0</span>)) &lt; <span class="number">0</span>)&#123;</span><br><span class="line">        error(); <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> flags = fcntl(sockfd, F_GETFL, <span class="number">0</span>);  <span class="comment">//获取flags。</span></span><br><span class="line">    fcntl(sockfd, F_SETFL, flags | O_NONBLOCK); <span class="comment">//设置成非阻塞模式；</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(bind(serverFd, serverAddr, <span class="keyword">sizeof</span>(*address)) &lt; <span class="number">0</span>)&#123;   <span class="comment">//绑定IP与端口</span></span><br><span class="line">        error(); <span class="keyword">return</span> <span class="number">-2</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(listen(serverFd, backlog) &lt; <span class="number">0</span>)&#123;  <span class="comment">// 开始监听</span></span><br><span class="line">        error(); <span class="keyword">return</span> <span class="number">-3</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">clientAddr</span>;</span></span><br><span class="line">    <span class="keyword">socklen_t</span> clientAddrLen = <span class="keyword">sizeof</span>(clientAddr);</span><br><span class="line">    <span class="keyword">while</span>(<span class="number">1</span>)&#123;</span><br><span class="line">        <span class="keyword">int</span> clientFd = accept(serverFd, &amp;clientAddr, &amp;clientAddrLen);</span><br><span class="line">        <span class="comment">// 不会阻塞，没有连接会返回-1</span></span><br><span class="line">        <span class="keyword">if</span>(clientFd &lt; <span class="number">0</span>)&#123;</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">while</span>(<span class="number">1</span>)&#123;</span><br><span class="line">            <span class="keyword">char</span>  buff[<span class="number">4096</span>];</span><br><span class="line">            <span class="keyword">int</span> readSize = recv(clientFd, buff, MAXLINE, <span class="number">0</span>);</span><br><span class="line">            <span class="comment">// 不会阻塞，没有收到数据返回-1</span></span><br><span class="line">            <span class="keyword">if</span>(readSize &lt; <span class="number">0</span>)&#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            buff[n] = <span class="string">'\0'</span>;</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">"received from client: %s\n"</span>, buff);</span><br><span class="line">            close(clientFd);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        close(serverFd);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>当然，这里都仅仅展示创建1个服务端口，在接收了1个客户端发过来的1次数据后就断开连接。如果要单端口应对多个客户端，在一个线程里非阻塞式读写数据，写起来还是比较麻烦了。  </p>
-<h2 id="利用select完成多客户端轮询"><span class="post-title-index">3.2. </span><a href="#利用select完成多客户端轮询" class="headerlink" title="利用select完成多客户端轮询"></a>利用select完成多客户端轮询</h2><p>针对普通的方式在多客户端情况下，通过单线程方式编程较为复杂的情况，Linux提供了一组以select函数为核心的API组。<br>具体而言，针对该进程，每一个客户端的连接都会为其创建一个File Descriptor文件描述符（这个在上面的阻塞代码中也同样有体现），而这个FD的范围总是有限的，而且通常都是连续申请的。比如我的macOS 10.15.5在默认情况下就是256（ulimit -n)，而我CentOS 7.9（内核版本4.9.）的虚拟机中，最大FD就是1024：<br><img src="/2021/01/30/IO-01HistoryAndByteBuffer/MaxOpenFiles.png" alt="MaxOpenFiles"><br>所以select利用一个bitmap就能够通过几个字节将这些FD存储起来。  </p>
+<h2 id="利用select完成多客户端轮询"><span class="post-title-index">3.2. </span><a href="#利用select完成多客户端轮询" class="headerlink" title="利用select完成多客户端轮询"></a>利用select完成多客户端轮询</h2><p>针对普通的方式在多客户端情况下，通过单线程方式编程较为复杂的情况，Linux提供了一组以select函数为核心的API组。<br>具体而言，针对该进程，每一个客户端的连接都会为其创建一个File Descriptor文件描述符（这个在上面的阻塞代码中也同样有体现），而这个FD的范围总是有限的，而且通常都是连续申请的。比如我的macOS 10.15.5在默认情况下就是256（ulimit -n)，而我CentOS 7.9（内核版本4.9.）的虚拟机中，最大FD就是1024：<br><img src="/2021/01/30/IO-01History/MaxOpenFiles.png" alt="MaxOpenFiles"><br>所以select利用一个bitmap就能够通过几个字节将这些FD存储起来。  </p>
 <p>比如如果我有6个fd，分别是0、3、4、5、6、7，我就只需要1个byte就能存储下来（<code>高11111001低</code>）。而如果我有3个fd，分别是3和17，那我就需要3个字节（<code>高00000010 00000000 00001000低</code>）。<br>接下来，来看看select函数怎么使用：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span></span><br><span class="line">    select(</span><br><span class="line">         <span class="keyword">int</span> nfds,                          <span class="comment">// fd的最大值+1</span></span><br><span class="line">         fd_set *<span class="keyword">restrict</span> readfds,          <span class="comment">// 可读fdset</span></span><br><span class="line">         fd_set *<span class="keyword">restrict</span> writefds,         <span class="comment">// 可写fdset</span></span><br><span class="line">         fd_set *<span class="keyword">restrict</span> errorfds,         <span class="comment">// 异常fdset</span></span><br><span class="line">         struct timeval *<span class="keyword">restrict</span> timeout   <span class="comment">// 超时时间</span></span><br><span class="line">    );</span><br></pre></td></tr></table></figure><br>这是这个函数的定义。其返回值是各个传入的fdset中就绪的fd的个数。而参数中的类型fd_set就是上面提到的bitmap，其底层其实就是一个long型的数组。各参数的含义如下：  </p>
 <ul>
 <li>nfds：表示的是这个fd的bitmap中，select应当从低位到高位遍历的次数（比如上面0、3、4、5、6、7这个例子，虽然1和2这两个fd不存在，但是因为穿插在里面，也需要遍历，所以从0到7，一共遍历8次，这个例子中nfds就是8），换句话说，就是这些fd中的最大的值+1。需要注意，这里不是fd的个数+1，而是fd的最大的值+1。  </li>
@@ -315,7 +315,7 @@
 <li>当用户查询时，就只需要返回有事件发生的这些fd。  </li>
 </ol>
 <p>为了提高第3步中回调查找对应fd的速度，epoll维护的这个表会采用红黑树的方式进行组织。这样查找的速度就仅与树的深度有关了。同时，为了避免大片连续内存的开辟，存放有事件发生的fd的数据结构被设计为一个链表。<br>这样，来看epoll暴露的3个API：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">epoll_create</span><span class="params">(<span class="keyword">int</span> notused)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">epoll_ctl</span><span class="params">(<span class="keyword">int</span> epfd, <span class="keyword">int</span> op, <span class="keyword">int</span> fd, struct epoll_event* event)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">epoll_wait</span><span class="params">(<span class="keyword">int</span> epfd, struct epoll_event* events, <span class="keyword">int</span> maxevents, <span class="keyword">int</span> timeout)</span></span>;</span><br></pre></td></tr></table></figure><br><code>epoll_create</code>用于创建一个epoll的fd（<code>epfd</code>）用作后面的两个API，而在内部，则是初始化了红黑树和链表头。入参本身没有用了，只需要传入任意一个大于0的值即可，本身是用作兼容旧版本的epoll。<br><code>epoll_ctl</code>用于向<code>epfd</code>中添加、删除监听的fd，或者对已经添加的fd的相关事件进行修改。而在内部，就是根据下面op字段的取值，对红黑树进行增删改的操作：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// epoll中op字段的取值</span></span><br><span class="line">EPOLL_CTL_ADD   <span class="comment">// 添加一个fd，并注册对该fd需要关注的event</span></span><br><span class="line">EPOLL_CTL_DEL   <span class="comment">// 删除一个fd</span></span><br><span class="line">EPOLL_CTL_MOD   <span class="comment">// 修改一个fd注册的event</span></span><br></pre></td></tr></table></figure><br>而<code>epoll_wait</code>用于对<code>epfd</code>取出可操作的fd。在内部，就是将链表中的可操作fd取出并放入第二个参数<code>events</code>数组中。  </p>
-<p>整个流程大致是这样的：<br><img src="/2021/01/30/IO-01HistoryAndByteBuffer/epollModel.png" alt="epoll model">  </p>
+<p>整个流程大致是这样的：<br><img src="/2021/01/30/IO-01History/epollModel.png" alt="epoll model">  </p>
 <p>其中<code>ep_poll_callback</code>就是网卡发生中断后的回调函数。</p>
 <p>所以总的流程就是：  </p>
 <ol>
