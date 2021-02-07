@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.wudi.space","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="在学习缓存的时候，简要认识了一下IO的变迁史。在这篇文章中，将详细介绍一下各个历史阶段中IO的变迁过程。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IO-01-IO变迁和ByteBuffer">
+<meta property="og:url" content="https://www.wudi.space/2021/01/30/IO-01HistoryAndByteBuffer/index.html">
+<meta property="og:site_name" content="吴迪小站">
+<meta property="og:description" content="在学习缓存的时候，简要认识了一下IO的变迁史。在这篇文章中，将详细介绍一下各个历史阶段中IO的变迁过程。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.wudi.space/2021/01/30/IO-01HistoryAndByteBuffer/MaxOpenFiles.png">
+<meta property="og:image" content="https://www.wudi.space/2021/01/30/IO-01HistoryAndByteBuffer/epollModel.png">
+<meta property="article:published_time" content="2021-01-30T02:21:19.000Z">
+<meta property="article:modified_time" content="2021-02-07T07:36:21.133Z">
+<meta property="article:author" content="吴迪">
+<meta property="article:tag" content="IO">
+<meta property="article:tag" content="NIO">
+<meta property="article:tag" content="AIO">
+<meta property="article:tag" content="ByteBuffer">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.wudi.space/2021/01/30/IO-01HistoryAndByteBuffer/MaxOpenFiles.png">
+
+<link rel="canonical" href="https://www.wudi.space/2021/01/30/IO-01HistoryAndByteBuffer/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>IO-01-IO变迁和ByteBuffer | 吴迪小站</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">吴迪小站</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.wudi.space/2021/01/30/IO-01HistoryAndByteBuffer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg?raw=true">
+      <meta itemprop="name" content="吴迪">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="吴迪小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          IO-01-IO变迁和ByteBuffer
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-01-30 10:21:19" itemprop="dateCreated datePublished" datetime="2021-01-30T10:21:19+08:00">2021-01-30</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-02-07 15:36:21" itemprop="dateModified" datetime="2021-02-07T15:36:21+08:00">2021-02-07</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IO%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">IO技术</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在<a href="2021/01/02/Cache-01Basic/">学习缓存的时候</a>，简要认识了一下IO的变迁史。在这篇文章中，将详细介绍一下各个历史阶段中IO的变迁过程。</p>
+<a id="more"></a>
+<p>对于UNIX系统来说，“一些皆文件”，无论是是一个txt文件、一个文件夹、一个磁盘、一个光驱、一个网络URL、一个鼠标、一个打印机，这些在UNIX的用户眼中，统统都是“文件”。也因此，这些“文件”通过<code>open</code>、<code>read</code>、<code>write</code>、<code>close</code>等操作，就可以进行基础甚至全部访问操作。一个普通的文本文件可以打开、读取、写入、关闭，一个打印机可以打开（连接）、读取（查看打印列表）、写入（打印）、关闭（断开连接），一个网络URL可以打开（连接）、读取（下载）、写入（上传/发送）、关闭（断开连接）。从这种层面上来说，UNIX的一切皆文件是一种面向接口编程的实践，对于大部分而言，这些接口传输的都是字节流。<br>Windows其实也是类似的，底层大多也将各类抽象为文件，无论是串口、键盘等，都可以利用ReadFile和WriteFile进行操作。只不过为了更好的可读性，再上层再次封装，变成了各种不同的设备、对象。  </p>
+<p>在Linux系统中，设备的驱动注册后，当有相关的设备被创建，就将注册的驱动对象写入Linux的<code>inode</code>中。在open时将驱动中的read、write等函数放入<code>file</code>结构体中的<code>file_operations</code>中，并返回file结构体的索引file descriptor（也就是fd）。这样当通过fd调用read、write等指令时，通过<code>file_operations</code>就可以调用到驱动中的各个方法了。（相关结构体可以参见<a href="https://www.linuxidc.com/linux/2017-02/140227.htm" target="_blank" rel="noopener">这篇文章</a>）  </p>
+<p>因为操作系统的资源是有限的，如果不对访问进行区分，可能会造成访问间的冲突。Inter的X86架构划分了R0~R3特权等级，R0权限最高，R3权限最低。Linux通常使用R0和R3，R0就是内核态，R3就是用户态。当在用户态下调用内核态的方法时，就需要从用户态切换到内核态。所以上面提到的IO操作就涉及到了用户态向内核态的切换。这个过程相对比较占用资源，因为需要将用户态的上下文保存下来，完事还要恢复现场，同时由于内核不信任用户，还需要做一些校验和检查，零零总总的操作有可能比实际执行的函数耗时还要长。在IO密集的情况下，这个损耗是不可容忍的。  </p>
+<p>正因如此，在IO的变迁，就是在不断降低阻塞的时间，减少开销，提高程序的执行效率。</p>
+<h1 id="阻塞-非阻塞与同步-异步"><span class="post-title-index">1. </span><a href="#阻塞-非阻塞与同步-异步" class="headerlink" title="阻塞/非阻塞与同步/异步"></a>阻塞/非阻塞与同步/异步</h1><p>首先需要明确几个概念。什么是阻塞与非阻塞，什么是同步与异步。<br>我们知道，读取一个IO端口，有2步。首先是检查有无数据就绪，可以读取；然后是将就绪的数据从内核中拷贝到用户空间中。<br>检查有无数据就绪这个过程可以是阻塞的，也就是一直等待，直到有数据就绪；也可以是非阻塞的，也就是发现没有数据就绪，就先去执行别的事情，稍后再来检查。<br>将数据从内核拷贝到用户控件，可以是与用户的其他指令同步的，也就是拷贝完成了再执行其他的执行；也可以是异步的，也就是一边拷贝，一边用户执行其他的指令。  </p>
+<p>举一个不太恰当的例子，对于烧水的这个过程，将水在烧水壶中烧开，然后倒入热水壶中备用。如果使用普通的烧水壶，我不知道水什么时候开，如果一直观察水开了没有，直到水开了倒出热水，再做其他的事情，这就是阻塞同步的。如果我时不时过来看一眼水开了没有，没开的话我就先去做别的事情，但是当水开了我还是要停下其他的工作把开水倒出来，这就是非阻塞同步的。如果我买的是一个高科技热水壶，我只需要给它下一个烧水的指令，烧好了之后它能自动倒出热水到热水壶中，而我在此期间可以去左点其他的事情，这就是非阻塞异步的。在这个例子中，开水就是我需要的数据，烧水壶就是内核态的容器，检查水开了没有就是检查数据是否就绪，将开水从烧水壶倒入热水壶就是将数据从内核中拷贝到用户空间。  </p>
+<h1 id="BIO——Blocking-IO"><span class="post-title-index">2. </span><a href="#BIO——Blocking-IO" class="headerlink" title="BIO——Blocking IO"></a>BIO——Blocking IO</h1><p>最初的IO是完全阻塞的同步的。这就是BIO。<br>在Java中，最简单的写法就是各种XXXInputStream和OutputStream。常见的有<code>FileInputStream</code>、<code>ChannelInputStream</code>、<code>SocketInputStream</code>等等。</p>
+<p>既然是Blocking IO，那么它在inputStream.read处就是阻塞的，直到数据准备完成才会返回。这在文件系统上不是很明显，但是在socket上就非常明显了。相关代码就不展示了，很基础。  </p>
+<p>这里需要说的是用户态与内核态的切换造成的性能损耗。我们假设有10个字符需要通过write写入文件。如果我1个字符1个字符的调用write，那么需要调用10次，需要进行10次“用户态-内核态-用户态”的切换。但是如果我一次性将10个字符都交给内核，那么就只需要进行1次“用户态-内核态-用户态”的切换。可以想见后者的效率理论上应该更高。  </p>
+<p>Java的BufferedOutputStream就是后一种想法的实现。我们可以做一个实验。不过上面的说法是相同的数据比较时间长短，要准备一个大文件比较麻烦，这里反过来，相同时间比较数据写入的速度。<br>以下代码位于我的<a href="https://github.com/discko/learnio/tree/master/nio/src/main/java/space/wudi/learnio/io" target="_blank" rel="noopener">github仓库learnIO中</a><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// TestBioBuffer.java</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestBioBuffer</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">volatile</span> <span class="keyword">boolean</span> flag;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> delay = <span class="number">5000</span>;  <span class="comment">// delay 5 seconds</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        test(<span class="number">1</span>);</span><br><span class="line">        test(<span class="number">10</span>);</span><br><span class="line">        test(<span class="number">100</span>);</span><br><span class="line">        test(<span class="number">8</span>*<span class="number">1024</span>);</span><br><span class="line">        test(<span class="number">16</span>*<span class="number">1024</span>);</span><br><span class="line">        test(<span class="number">24</span>*<span class="number">1024</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">test</span><span class="params">(<span class="keyword">int</span> bytesEachTime)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="comment">// write bytesEachTime bytes at once with and without buffer</span></span><br><span class="line">        System.out.println(<span class="string">"------------test "</span>+bytesEachTime+<span class="string">" bytes each time"</span>);</span><br><span class="line">        <span class="keyword">byte</span>[] data = getData(bytesEachTime);</span><br><span class="line">        Timer timer1 = startTimer();</span><br><span class="line">        testWithoutBuffer(<span class="string">"/tmp/WithoutBuffer.txt."</span>+bytesEachTime, data);</span><br><span class="line">        timer1.cancel();</span><br><span class="line">        Timer timer2 = startTimer();</span><br><span class="line">        testWithBuffer(<span class="string">"/tmp/WithBuffer.txt."</span>+bytesEachTime, data);</span><br><span class="line">        timer2.cancel();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// create and start a timer to stop the loop after delay</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> Timer <span class="title">startTimer</span><span class="params">()</span></span>&#123;</span><br><span class="line">        flag = <span class="keyword">true</span>;</span><br><span class="line">        Timer timer = <span class="keyword">new</span> Timer();</span><br><span class="line">        timer.schedule(<span class="keyword">new</span> TimerTask() &#123;</span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123; flag = <span class="keyword">false</span>; &#125;</span><br><span class="line">        &#125;, delay);</span><br><span class="line">        <span class="keyword">return</span> timer;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">byte</span>[] getData(<span class="keyword">int</span> len)&#123;</span><br><span class="line">        <span class="keyword">byte</span>[] bytes = <span class="keyword">new</span> <span class="keyword">byte</span>[len];</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;len;i++)&#123;</span><br><span class="line">            bytes[i]=<span class="string">'a'</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> bytes;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">testWithoutBuffer</span><span class="params">(String filename, <span class="keyword">byte</span>[] data)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="comment">// directly use FileOutputStream, without buffer</span></span><br><span class="line">        <span class="keyword">try</span> (FileOutputStream fos = <span class="keyword">new</span> FileOutputStream(filename))&#123;</span><br><span class="line">            <span class="keyword">while</span> (flag) &#123;</span><br><span class="line">                fos.write(data);</span><br><span class="line">            &#125;</span><br><span class="line">            fos.flush();    <span class="comment">// force flush to disk</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// check file size</span></span><br><span class="line">        System.out.println(<span class="string">"output without buffer done. size = "</span> + <span class="keyword">new</span> File(filename).length());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">testWithBuffer</span><span class="params">(String filename, <span class="keyword">byte</span>[] data)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="comment">// use a buffered OutputStream to output to file</span></span><br><span class="line">        <span class="comment">// 2nd parameter of new BufferedOutputStream is buffer size, default is 8192B</span></span><br><span class="line">        <span class="keyword">try</span>(BufferedOutputStream bos = <span class="keyword">new</span> BufferedOutputStream(<span class="keyword">new</span> FileOutputStream(filename)<span class="comment">/*, 16*1024*/</span>)) &#123;</span><br><span class="line">            <span class="keyword">while</span> (flag) &#123;</span><br><span class="line">                bos.write(data);</span><br><span class="line">            &#125;</span><br><span class="line">            bos.flush();    <span class="comment">// force flush to dist</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// check file size</span></span><br><span class="line">        System.out.println(<span class="string">"output with buffer done.    size = "</span> + <span class="keyword">new</span> File(filename).length());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>首先是默认buffer大小的情况下（8k）： </p>
+<blockquote>
+<p>——————test 1 bytes each time<br>output without buffer done. size = 1696000<br>output with buffer done.    size = 236268904<br>——————test 10 bytes each time<br>output without buffer done. size = 19415060<br>output with buffer done.    size = 2902987640<br>——————test 100 bytes each time<br>output without buffer done. size = 158360000<br>output with buffer done.    size = 4002388300<br>——————test 4096 bytes each time<br>output without buffer done. size = 3118297088<br>output with buffer done.    size = 4433104896<br>——————test 8192 bytes each time<br>output without buffer done. size = 5410914304<br>output with buffer done.    size = 5402279936<br>——————test 16384 bytes each time<br>output without buffer done. size = 7075823616<br>output with buffer done.    size = 6856409088</p>
+</blockquote>
+<p>然后是buffer大小为16k的情况下：  </p>
+<blockquote>
+<p>——————test 1 bytes each time<br>output without buffer done. size = 2017573<br>output with buffer done.    size = 240117056<br>——————test 10 bytes each time<br>output without buffer done. size = 19067480<br>output with buffer done.    size = 3281763900<br>——————test 100 bytes each time<br>output without buffer done. size = 161144400<br>output with buffer done.    size = 5610525300<br>——————test 8192 bytes each time<br>output without buffer done. size = 4813963264<br>output with buffer done.    size = 6567288832<br>——————test 16384 bytes each time<br>output without buffer done. size = 6554075136<br>output with buffer done.    size = 6761381888<br>——————test 24576 bytes each time<br>output without buffer done. size = 7432421376<br>output with buffer done.    size = 6854615040</p>
+</blockquote>
+<p>可以看到，在每一次输出的数量很少的情况下，BufferedOutputStream的效率是很高的。如果每次输出1个字节，BufferedOutputStream的速度甚至可以达到FileOutputStream的100倍（应该与硬盘也有关系）。<br>但随着单次输出的大小的提高，当达到与buffer size接近时，BufferedOutputStream的优势不再，反而因为不断地将数据复制到buffer中，反而浪费了不少的时间。<br>当单次输出的数量超过buffer size时，因为封装的层次和调用栈的加深，BufferedOutputStream反而落了下风。  </p>
+<p>从BufferedOutputStream.write的源码中也可以看出来它的取舍：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// java.io.BufferedOutputStream</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">write</span><span class="params">(<span class="keyword">byte</span> b[], <span class="keyword">int</span> off, <span class="keyword">int</span> len)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (len &gt;= buf.length) &#123;</span><br><span class="line">            <span class="comment">// 当要输出的大小超过本身buffer的大小时</span></span><br><span class="line">            <span class="comment">// 不经过buffer中转，直接输出</span></span><br><span class="line">            flushBuffer();</span><br><span class="line">            out.write(b, off, len);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (len &gt; buf.length - count) &#123;</span><br><span class="line">            flushBuffer();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 将数据复制到buffer中</span></span><br><span class="line">        System.arraycopy(b, off, buf, count, len);</span><br><span class="line">        count += len;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>先看看网络连接在Linux系统API层面上是如何完成的。<br>首先需要明确的是，在底层的系统API上，网络IO大致遵循“创建服务程序的文件描述符<code>serverFd</code>”→“将IP与端口bind到服务程序上”→“将进程修改为listen状态，开始监听”→“通过accept获取客户端连接的文件描述符<code>clientFd</code>”。也即<code>socket()</code>、<code>bind()</code>、<code>listen()</code>、<code>accept()</code>。<br>当有客户端连接过来后，<code>accept()</code>就会返回该客户端对应的文件描述符<code>clientFd</code>。接下来对<code>clientFd</code>进行读写操作，就对应着从客户端读取数据与向其发送数据了。<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">serverBlocked</span><span class="params">(struct sockaddr_in* serverAddr, <span class="keyword">int</span> backlog)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> serverFd;</span><br><span class="line">    <span class="keyword">if</span>((serverFd = socket(PF_INET, SOCK_STREAM, <span class="number">0</span>)) &lt; <span class="number">0</span>)&#123;   <span class="comment">// 创建ServerSocket的文件描述符</span></span><br><span class="line">        error(); <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(bind(serverFd, serverAddr, <span class="keyword">sizeof</span>(*address)) &lt; <span class="number">0</span>)&#123;   <span class="comment">// 绑定IP和端口</span></span><br><span class="line">        error(); <span class="keyword">return</span> <span class="number">-2</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(listen(serverFd, backlog) &lt; <span class="number">0</span>)&#123;  <span class="comment">// 开始监听</span></span><br><span class="line">        error(); <span class="keyword">return</span> <span class="number">-3</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">clientAddr</span>;</span></span><br><span class="line">    <span class="keyword">socklen_t</span> clientAddrLen = <span class="keyword">sizeof</span>(clientAddr);</span><br><span class="line">    <span class="keyword">int</span> clientFd = accept(serverFd, &amp;clientAddr, &amp;clientAddrLen);</span><br><span class="line">    <span class="comment">// 阻塞直到客户端连接过来，或发生错误</span></span><br><span class="line">    <span class="keyword">while</span>(<span class="number">1</span>)&#123;</span><br><span class="line">        <span class="keyword">if</span>(clientFd &lt; <span class="number">0</span>)&#123;</span><br><span class="line">            error(); <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">char</span>  buff[<span class="number">4096</span>];</span><br><span class="line">        <span class="keyword">int</span> readSize = recv(clientFd, buff, MAXLINE, <span class="number">0</span>);</span><br><span class="line">        <span class="comment">// 阻塞直到客户端数据到达</span></span><br><span class="line">        buff[n] = <span class="string">'\0'</span>;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"received from client: %s\n"</span>, buff);</span><br><span class="line">        close(clientFd);</span><br><span class="line">    &#125;</span><br><span class="line">    close(serverFd);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>系统API写起来比较麻烦，通过Java来写看上去就比较清晰了：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ServerSocket server = <span class="keyword">new</span> ServerSocket();</span><br><span class="line">Socket client = server.accept();    <span class="comment">// 阻塞</span></span><br><span class="line">client.getInputStream().read();     <span class="comment">// 阻塞</span></span><br></pre></td></tr></table></figure></p>
+<p>无论是在accept处还是在recv处，都会发生阻塞。<br>所以经典的做法是，为每一个Socket连接创建一个线程，在线程中进行IO，这样就不会阻塞其他的连接了：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">ServerSocket server = <span class="keyword">new</span> ServerSocket();</span><br><span class="line"><span class="keyword">while</span>(<span class="keyword">true</span>)&#123;</span><br><span class="line">    Socket client = server.accept();</span><br><span class="line">    <span class="keyword">new</span> Thread(<span class="keyword">new</span> ClientHandler(client)).start();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>当然这仍然会存在问题。最显著的问题就是C10K问题，也就是单机1万客户端连接的瓶颈。<br>首先可以估算一下，在JVM中，通常我们会给-Xss参数设置为128k到1M不等，也就是每个线程的Thread Stack空间大小，这一块是每个线程的固定开销。那么，当有1万个连接并发，为它们创建1万个线程，这就是1G到10G的开销。这个问题是1999年提出来的，当时的计算机还是32位，理论内存上限是4GB。可以想见，通过这样的IO模型，是很难突破万级连接的。  </p>
+<p>如果在IO读写时，没有数据就直接返回，而不是阻塞住，时不时地去查询一下有没有可读的端口，再进行对应的处理，哪怕实时性稍差一点，但每一个线程就可以应对多数的连接了。  </p>
+<h1 id="NIO——Non-blocking-IO"><span class="post-title-index">3. </span><a href="#NIO——Non-blocking-IO" class="headerlink" title="NIO——Non-blocking IO"></a>NIO——Non-blocking IO</h1><p>于是，非阻塞IO就诞生了。下面先简单展示一下Linux系统提供的api，介绍一下集中NIO方式的变迁过程和特点、原理。然后再用java.nio包下的工具编写Java下的非阻塞IO用例。</p>
+<h2 id="最基本的非阻塞IO"><span class="post-title-index">3.1. </span><a href="#最基本的非阻塞IO" class="headerlink" title="最基本的非阻塞IO"></a>最基本的非阻塞IO</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">serverNonblocked</span><span class="params">(struct sockaddr_in* serverAddr, <span class="keyword">int</span> backlog)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> serverFd;</span><br><span class="line">    <span class="keyword">if</span>((serverFd = socket(PF_INET, SOCK_STREAM, <span class="number">0</span>)) &lt; <span class="number">0</span>)&#123;</span><br><span class="line">        error(); <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> flags = fcntl(sockfd, F_GETFL, <span class="number">0</span>);  <span class="comment">//获取flags。</span></span><br><span class="line">    fcntl(sockfd, F_SETFL, flags | O_NONBLOCK); <span class="comment">//设置成非阻塞模式；</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(bind(serverFd, serverAddr, <span class="keyword">sizeof</span>(*address)) &lt; <span class="number">0</span>)&#123;   <span class="comment">//绑定IP与端口</span></span><br><span class="line">        error(); <span class="keyword">return</span> <span class="number">-2</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(listen(serverFd, backlog) &lt; <span class="number">0</span>)&#123;  <span class="comment">// 开始监听</span></span><br><span class="line">        error(); <span class="keyword">return</span> <span class="number">-3</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">clientAddr</span>;</span></span><br><span class="line">    <span class="keyword">socklen_t</span> clientAddrLen = <span class="keyword">sizeof</span>(clientAddr);</span><br><span class="line">    <span class="keyword">while</span>(<span class="number">1</span>)&#123;</span><br><span class="line">        <span class="keyword">int</span> clientFd = accept(serverFd, &amp;clientAddr, &amp;clientAddrLen);</span><br><span class="line">        <span class="comment">// 不会阻塞，没有连接会返回-1</span></span><br><span class="line">        <span class="keyword">if</span>(clientFd &lt; <span class="number">0</span>)&#123;</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">while</span>(<span class="number">1</span>)&#123;</span><br><span class="line">            <span class="keyword">char</span>  buff[<span class="number">4096</span>];</span><br><span class="line">            <span class="keyword">int</span> readSize = recv(clientFd, buff, MAXLINE, <span class="number">0</span>);</span><br><span class="line">            <span class="comment">// 不会阻塞，没有收到数据返回-1</span></span><br><span class="line">            <span class="keyword">if</span>(readSize &lt; <span class="number">0</span>)&#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            buff[n] = <span class="string">'\0'</span>;</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">"received from client: %s\n"</span>, buff);</span><br><span class="line">            close(clientFd);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        close(serverFd);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当然，这里都仅仅展示创建1个服务端口，在接收了1个客户端发过来的1次数据后就断开连接。如果要单端口应对多个客户端，在一个线程里非阻塞式读写数据，写起来还是比较麻烦了。  </p>
+<h2 id="利用select完成多客户端轮询"><span class="post-title-index">3.2. </span><a href="#利用select完成多客户端轮询" class="headerlink" title="利用select完成多客户端轮询"></a>利用select完成多客户端轮询</h2><p>针对普通的方式在多客户端情况下，通过单线程方式编程较为复杂的情况，Linux提供了一组以select函数为核心的API组。<br>具体而言，针对该进程，每一个客户端的连接都会为其创建一个File Descriptor文件描述符（这个在上面的阻塞代码中也同样有体现），而这个FD的范围总是有限的，而且通常都是连续申请的。比如我的macOS 10.15.5在默认情况下就是256（ulimit -n)，而我CentOS 7.9（内核版本4.9.）的虚拟机中，最大FD就是1024：<br><img src="/2021/01/30/IO-01HistoryAndByteBuffer/MaxOpenFiles.png" alt="MaxOpenFiles"><br>所以select利用一个bitmap就能够通过几个字节将这些FD存储起来。  </p>
+<p>比如如果我有6个fd，分别是0、3、4、5、6、7，我就只需要1个byte就能存储下来（<code>高11111001低</code>）。而如果我有3个fd，分别是3和17，那我就需要3个字节（<code>高00000010 00000000 00001000低</code>）。<br>接下来，来看看select函数怎么使用：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span></span><br><span class="line">    select(</span><br><span class="line">         <span class="keyword">int</span> nfds,                          <span class="comment">// fd的最大值+1</span></span><br><span class="line">         fd_set *<span class="keyword">restrict</span> readfds,          <span class="comment">// 可读fdset</span></span><br><span class="line">         fd_set *<span class="keyword">restrict</span> writefds,         <span class="comment">// 可写fdset</span></span><br><span class="line">         fd_set *<span class="keyword">restrict</span> errorfds,         <span class="comment">// 异常fdset</span></span><br><span class="line">         struct timeval *<span class="keyword">restrict</span> timeout   <span class="comment">// 超时时间</span></span><br><span class="line">    );</span><br></pre></td></tr></table></figure><br>这是这个函数的定义。其返回值是各个传入的fdset中就绪的fd的个数。而参数中的类型fd_set就是上面提到的bitmap，其底层其实就是一个long型的数组。各参数的含义如下：  </p>
+<ul>
+<li>nfds：表示的是这个fd的bitmap中，select应当从低位到高位遍历的次数（比如上面0、3、4、5、6、7这个例子，虽然1和2这两个fd不存在，但是因为穿插在里面，也需要遍历，所以从0到7，一共遍历8次，这个例子中nfds就是8），换句话说，就是这些fd中的最大的值+1。需要注意，这里不是fd的个数+1，而是fd的最大的值+1。  </li>
+<li>readfds、writefds、errorfds：分别是交给select去处理判断“可读”、“可写”、“有异常”的fd的bitmap。  </li>
+<li>timeout：用于控制select本身的阻塞时间，如果为NULL则永久阻塞，否则可以通过timeval结构体设置秒值和毫秒值。  </li>
+</ul>
+<p>同时，select也提供了几个宏定义，来方便对fd的bitmap的操作。比如如果要将fd_1放入fdset中，则执行FD_SET(fd_1, &amp;fdset)。相关宏如下：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">FD_SET</span><span class="params">(<span class="keyword">int</span> fd, fd_set* fdset)</span>  <span class="comment">// 将fd加入fdset</span></span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">FD_CLR</span><span class="params">(<span class="keyword">int</span> fd, fd_set* fdset)</span>  <span class="comment">// 将fd移出fdset</span></span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">FD_ISSET</span><span class="params">(<span class="keyword">int</span> fd, fd_set* fdset)</span> <span class="comment">// 判断fd是否在fdset中</span></span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">FD_ZERO</span><span class="params">(fd_set* fdset)</span>         <span class="comment">// 清空fdset</span></span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">FD_COPY</span><span class="params">(fd_set* src, fd_set* dst)</span>  <span class="comment">// 复制fdset</span></span></span><br></pre></td></tr></table></figure></p>
+<p>需要注意的是，select的参数readfds、writefds、errorfds既是入参，也是出参。这几个参数除了告知select，要去判断在置为1的对应的fd的状态，还会根据这个fd的状态对fdset中的这个位进行置位或者清零。这样，在select返回后，就可以直接遍历readfds（或writefds、errorfds），看看哪些位现在是1，就表示对应的fd现在是“可读”（或“可写”、“有异常”）的。  </p>
+<p>正因如此，在每一轮select之后，都应当重新设置各个fdset，因为它们已经被select修改了。  </p>
+<p>下面是一个利用select的简单例子：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">serverWithSelect</span><span class="params">()</span><span class="params">(struct sockaddr_in* serverAddr, <span class="keyword">int</span> backlog)</span></span>&#123;</span><br><span class="line">    fd_set fds; <span class="comment">// 用来保存所有接入的fd, 自动初始化</span></span><br><span class="line">    <span class="comment">// int maxFd = 0;  // 记录最大的fd的值</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> serverFd;</span><br><span class="line">    <span class="keyword">if</span>((serverFd = socket(PF_INET, SOCK_STREAM, <span class="number">0</span>)) &lt; <span class="number">0</span>)&#123;</span><br><span class="line">        error(); <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    FD_SET(serverFd, fds);  <span class="comment">// serverFd同样也是1个fd，待会儿如果发现它可读，就说明有新的客户端连接</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> flags = fcntl(sockfd, F_GETFL, <span class="number">0</span>);  <span class="comment">//获取flags。</span></span><br><span class="line">    fcntl(sockfd, F_SETFL, flags | O_NONBLOCK); <span class="comment">//设置成非阻塞模式；</span></span><br><span class="line">    <span class="keyword">if</span>(bind(serverFd, serverAddr, <span class="keyword">sizeof</span>(*address)) &lt; <span class="number">0</span>)&#123;</span><br><span class="line">        error(); <span class="keyword">return</span> <span class="number">-2</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(listen(serverFd, backlog) &lt; <span class="number">0</span>)&#123;</span><br><span class="line">        error(); <span class="keyword">return</span> <span class="number">-3</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 下面开始死循环</span></span><br><span class="line">    fd_set readfds; <span class="comment">// 例子中仅考虑read ready的情况</span></span><br><span class="line">    <span class="keyword">char</span> buff[<span class="number">4096</span>];<span class="comment">// 准备1个buffer用于接收数据</span></span><br><span class="line">    <span class="keyword">while</span>(<span class="number">1</span>)&#123;</span><br><span class="line">        readfds = fds;   <span class="comment">// 恢复readfds</span></span><br><span class="line">        <span class="keyword">int</span> n = select(FD_SETSIZE, &amp;readfds, <span class="comment">/*writefds*/</span><span class="literal">NULL</span>, <span class="comment">/*errorfds*/</span>, <span class="comment">/*timeout*/</span><span class="literal">NULL</span>);</span><br><span class="line">        <span class="keyword">if</span>(n &lt; <span class="number">0</span>)&#123;  <span class="comment">// 发生错误</span></span><br><span class="line">            error(); <span class="keyword">break</span>;</span><br><span class="line">        &#125;<span class="keyword">else</span> <span class="keyword">if</span>(n == <span class="number">0</span>)&#123;   <span class="comment">// 没有就绪连接</span></span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;  <span class="comment">// 存在就绪连接</span></span><br><span class="line">            <span class="keyword">for</span>(<span class="keyword">int</span> fd=<span class="number">0</span>;fd&lt;FD_SETSIZE;fd++)&#123;    <span class="comment">// 遍历所有的fd</span></span><br><span class="line">                <span class="keyword">if</span>(FD_ISSET(fd, &amp;readfds))&#123;  <span class="comment">// 如果fd可读</span></span><br><span class="line">                    <span class="keyword">if</span>(fd == serverFd)&#123;</span><br><span class="line">                        <span class="comment">// 如果fd是serverFd，说明有新客户端创建连接</span></span><br><span class="line">                        struct sockaddr_in clientAddr;</span><br><span class="line">                        socket_len clientAddrLen = <span class="keyword">sizeof</span>(clientAddr);</span><br><span class="line">                        <span class="keyword">int</span> clientFd = accept(fd, &amp;clientAddr, &amp;clientAddrLen);</span><br><span class="line">                        <span class="comment">// 将clientFd放入fds中</span></span><br><span class="line">                        FD_SET(clientFd, fds);</span><br><span class="line">                    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                        <span class="comment">// 客户端连接可读</span></span><br><span class="line">                        <span class="keyword">int</span> recvs = recv(fd, buff, MAXLINE, MSG_WAITALL);</span><br><span class="line">                        <span class="keyword">if</span>(recvs &lt;=<span class="number">0</span>)&#123;</span><br><span class="line">                            <span class="comment">// 获取的字节数小于0，说明发生了异常</span></span><br><span class="line">                            <span class="comment">// 获取的字节数等于0，说明客户端close</span></span><br><span class="line">                            close(fd);</span><br><span class="line">                            FD_CLR(fd, &amp;fd_set);</span><br><span class="line">                        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                            <span class="comment">// 获取的字节数大于0，读取到了数据</span></span><br><span class="line">                            buff[recvs] = <span class="string">'\0'</span>;</span><br><span class="line">                            prinf(<span class="string">"client msg: %s\n"</span>, buff);</span><br><span class="line">                            <span class="comment">// send(fd, xxx, xxx, xxx); 响应</span></span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">// next fd</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// next time select</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 当select发生错误，退出</span></span><br><span class="line">    close(serverFd);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">-4</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>在上面的代码中，本来是用了一个变量maxFd用于记录当前最大的fd。但考虑到移出断开的客户端连接后，需要重新遍历来获得新的maxFd，比较麻烦，就直接使用了系统内置的FD_SETSIZE。  </p>
+<p>在mac上这个值是1024，在CentOS上，根据<code>/usr/include/bits/typesizes.h</code>中的定义也是1024。  </p>
+<p>所以从这个角度来说，使用select反而限制了并发量不能超过FD_SIZE。在上限上面，反而低于了C10K问题。  </p>
+<p>而且，由于循环是运行在用户态，而select运行于内核态，每一次将fd_set在用户态与内核态间来回复制（1024位的话，就是128B，read、write、error三个fd_set就是384B），看上去不是很大，但是性能的提升不就是一点一滴地提高的么。  </p>
+<p>总结一下，select的优缺点：</p>
+<ul>
+<li>优点：简单化了单线程对多个客户端连接的轮询和数据处理</li>
+<li>缺点：<ol>
+<li>存在监听客户端上限（由FD_SETSIZE限制）</li>
+<li>每次都需要将fd_set在用户态与内核态之间来回复制</li>
+<li>select返回后，用户态中需要遍历整个fdset，检查对应的fd是否可以操作</li>
+<li>根据源码，do_select时总是会将所有的fd全都遍历一遍才会判断是否满足返回条件</li>
+</ol>
+</li>
+</ul>
+<p>源码我就不去分析了，可以参考<a href="https://blog.csdn.net/weixin_42462202/article/details/95315926" target="_blank" rel="noopener">这一篇文章</a>，而且我相信不同的内核版本、不同的UNIX发行版，具体的实现应该都会有一些差异。  </p>
+<p>至于FD_SETSIZE被设置为1024的原因，我没有找到特别靠谱的说法，在CentOS 7 的<code>/usr/include/linux/posixtypes.h</code>中找到这样一句话，大意就是1024已经够用了。考虑到select诞生于1990s，姑且就相信它吧，因为后来诞生的技术都大大突破了这个限制，也就没有了修改的动力。而且，由于系统内核中总是会遍历从0开始的所有fd编号，如果FD_SETSIZE过大的话，遍历的大多数fd都是没有启用的，那何尝不是一种性能损耗呢。</p>
+<blockquote>
+<p>/*</p>
+<ul>
+<li>This allows for 1024 file descriptors: if NR_OPEN is ever grown</li>
+<li>beyond that you’ll have to change this too. But 1024 fd’s seem to be</li>
+<li>enough even for such “real” unices like OSF/1, so hopefully this is</li>
+<li>one limit that doesn’t have to be changed [again].<br>*</li>
+<li>Note that POSIX wants the FD_CLEAR(fd,fdsetp) defines to be in</li>
+<li><sys time.h> (and thus <linux time.h>) - but this is a more logical</linux></sys></li>
+<li>place for them. Solved by having dummy defines in <sys time.h>.<br>*/</sys></li>
+</ul>
+</blockquote>
+<h2 id="poll"><span class="post-title-index">3.3. </span><a href="#poll" class="headerlink" title="poll"></a>poll</h2><p>poll的诞生，解决了select的第1个问题，但是其实现本身并没有什么新意。<br>为了避免FD_SETSIZE，poll需要将各个监听的fd完完整整的构造成数组：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span>                             <span class="comment">// 返回可IO的fd数量，负值异常</span></span><br><span class="line">    poll(</span><br><span class="line">        struct pollfd fds[],    <span class="comment">// 监听的fd们</span></span><br><span class="line">        <span class="keyword">nfds_t</span> nfds,            <span class="comment">// 监听的fd的数量</span></span><br><span class="line">        <span class="keyword">int</span> timeout             <span class="comment">// 超时时间</span></span><br><span class="line">    );</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">pollfd</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span>    fd;       <span class="comment">/* 文件描述符 */</span></span><br><span class="line">    short  events;   <span class="comment">/* 监听的事件 */</span></span><br><span class="line">    short  revents;  <span class="comment">/* 返回值，该fd发生的事件 */</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// events 和revents的部分可用位表：</span></span><br><span class="line">POLLERR <span class="comment">// 发生错误，仅用作revents</span></span><br><span class="line">POLLHUP <span class="comment">// 连接关闭，仅用作revents</span></span><br><span class="line">POLLIN  <span class="comment">// 监听读事件（events），该fd可读（revents）</span></span><br><span class="line">POLLOUT <span class="comment">// 监听写事件（events），该fd可写（revents）</span></span><br></pre></td></tr></table></figure><br>而在系统调用中，<code>do_sys_poll</code>函数会在将<code>fds</code>复制到内核的过程中，首先将若干个<code>pollfd</code>（也即<code>fds</code>中的元素）放在一个内存页<code>PAGE</code>中，如果一个内存页放不下所有的<code>pollfd</code>，则通过链表的形式，将若干个<code>PAGE</code>连接起来，从而充分利用碎片内核内存。每一个内存页大小的<code>pollfd</code>容器的结构如下，由于一个<code>pollfd</code>的大小为8B，一个内存页PAGE的大小为4kB，根据下面的结构可以计算出，一个<code>poll_list</code>中的<code>entries</code>数组长度大约是511，也即1页中大致能存放511个<code>pollfd</code>：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">poll_list</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">poll_list</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="keyword">int</span> len;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">pollfd</span> <span class="title">entries</span>[0];</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure><br>接下来，就会遍历<code>poll_list</code>中的每一个<code>pollfd</code>，去查询其状态，并设置各个<code>pollfd</code>的<code>revents</code>字段。<br>源码可以参考<a href="https://www.jianshu.com/p/da6642369ef0" target="_blank" rel="noopener">这篇文章</a>。  </p>
+<p>总结一下：</p>
+<ul>
+<li>优点：poll解决了select中对于监听的文件描述符总量过小的问题</li>
+<li>缺点：<ol>
+<li>在解决select文件描述符总量过小问题的同时，扩大了内核中复制的数据的量（本来只需要复制一个bitmap，现在要将整个<code>pollfd</code>数组复制到内核中  </li>
+<li>在内核中，仍然需要遍历所有的fd去查看是否可操作</li>
+<li>在返回到用户态后，仍然需要遍历所有的fd去找出可操作的fd，并操作</li>
+</ol>
+</li>
+</ul>
+<p>正是因为这个问题，poll的应用总是不温不火。   </p>
+<h2 id="epoll"><span class="post-title-index">3.4. </span><a href="#epoll" class="headerlink" title="epoll"></a>epoll</h2><p>介绍epoll之前，首先先介绍一下epoll解决了哪些方面的问题，然后通过例子来看看。首先是，用户态内核态间来回复制<strong><em>所有FD</em></strong>的问题被epoll解决；第二，在内核中，也没有遍历fd，而是通过事件驱动来发现可操作性的fd；第三，在发现可操作的fd后，用户态中可以直接操作这些fd，而不需要遍历所有的fd。<br>然后根据这三个优势，来看看epoll是怎么实现的。   </p>
+<ol>
+<li>与select、poll不同的是，epoll会在内核中自己维护一个表，用于记录所有需要监视的fd。这样，只有在添加fd时，才需要从用户态中复制一个fd到内核中（以及少量的相关的监视信息）。  </li>
+<li>在软中断中注册每一个fd对应的网卡事件的回调。</li>
+<li>当发生中断时，在回调中通过表找到对应的fd，并取出来单独保存。  </li>
+<li>当用户查询时，就只需要返回有事件发生的这些fd。  </li>
+</ol>
+<p>为了提高第3步中回调查找对应fd的速度，epoll维护的这个表会采用红黑树的方式进行组织。这样查找的速度就仅与树的深度有关了。同时，为了避免大片连续内存的开辟，存放有事件发生的fd的数据结构被设计为一个链表。<br>这样，来看epoll暴露的3个API：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">epoll_create</span><span class="params">(<span class="keyword">int</span> notused)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">epoll_ctl</span><span class="params">(<span class="keyword">int</span> epfd, <span class="keyword">int</span> op, <span class="keyword">int</span> fd, struct epoll_event* event)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">epoll_wait</span><span class="params">(<span class="keyword">int</span> epfd, struct epoll_event* events, <span class="keyword">int</span> maxevents, <span class="keyword">int</span> timeout)</span></span>;</span><br></pre></td></tr></table></figure><br><code>epoll_create</code>用于创建一个epoll的fd（<code>epfd</code>）用作后面的两个API，而在内部，则是初始化了红黑树和链表头。入参本身没有用了，只需要传入任意一个大于0的值即可，本身是用作兼容旧版本的epoll。<br><code>epoll_ctl</code>用于向<code>epfd</code>中添加、删除监听的fd，或者对已经添加的fd的相关事件进行修改。而在内部，就是根据下面op字段的取值，对红黑树进行增删改的操作：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// epoll中op字段的取值</span></span><br><span class="line">EPOLL_CTL_ADD   <span class="comment">// 添加一个fd，并注册对该fd需要关注的event</span></span><br><span class="line">EPOLL_CTL_DEL   <span class="comment">// 删除一个fd</span></span><br><span class="line">EPOLL_CTL_MOD   <span class="comment">// 修改一个fd注册的event</span></span><br></pre></td></tr></table></figure><br>而<code>epoll_wait</code>用于对<code>epfd</code>取出可操作的fd。在内部，就是将链表中的可操作fd取出并放入第二个参数<code>events</code>数组中。  </p>
+<p>整个流程大致是这样的：<br><img src="/2021/01/30/IO-01HistoryAndByteBuffer/epollModel.png" alt="epoll model">  </p>
+<p>其中<code>ep_poll_callback</code>就是网卡发生中断后的回调函数。</p>
+<p>所以总的流程就是：  </p>
+<ol>
+<li>通过<code>epoll_create</code>创建一个epfd，同时在内核内存中初始化一棵红黑树和一个就绪链表，并将epfd指向它们。</li>
+<li>当有需要监听的fd，就通过<code>epoll_ctl</code>加入红黑树，对有需要修改监听内容的或者不再需要监听的，也通过<code>epoll_ctl</code>对红黑树结点进行操作。在此过程中，向系统注册网卡软中断。  </li>
+<li>当触发网卡软中断后，回调函数<code>ep_poll_callback</code>先通过红黑树快速查找对应的fd，然后将该fd复制到就绪链表尾。</li>
+<li>用户通过<code>epoll_wait</code>查询目前已经就绪的fd时，内核将就绪链表中最多<code>maxevents</code>个复制到<code>events</code>数组中。如果就绪链表中的就绪fd个数超过<code>maxevents</code>，则剩余的继续留在就绪链表中，等待下一次<code>epoll_wait</code>调用；如果就绪列表为空，则将主动让出CPU，直到超时或被唤醒。  </li>
+</ol>
+<p>这样就比较清晰了。源码部分可以参考<a href="https://blog.csdn.net/weiyuefei/article/details/53006659" target="_blank" rel="noopener">这一篇博文</a>。  </p>
+<p>接下来写一个例子程序来看看：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 入口函数。调用该函数，启动epoll版server socket</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">serverWithEpoll</span><span class="params">(struct sockaddr_in* serverAddr, <span class="keyword">int</span> backlog)</span></span>&#123;</span><br><span class="line">    <span class="comment">// 获取epfd，让epoll初始化</span></span><br><span class="line">    <span class="keyword">int</span> epfd = initEpoll(); </span><br><span class="line">    <span class="keyword">if</span>(epfd &lt; <span class="number">0</span>) <span class="keyword">return</span> epfd;</span><br><span class="line">    <span class="comment">// 创建server socket，开始监听</span></span><br><span class="line">    <span class="keyword">int</span> serverFd = initServerSocket(serverAddr, backlog);</span><br><span class="line">    <span class="keyword">if</span>(serverFd &lt; <span class="number">0</span>) <span class="keyword">return</span> serverFd;</span><br><span class="line">    <span class="comment">// 将serversocket也加入epoll，方便对新连接做统一处理</span></span><br><span class="line">    <span class="keyword">int</span> registerResult = registerFd(epfd, serverFd, EPOLLIN, EPOLL_CTL_ADD);</span><br><span class="line">    <span class="keyword">if</span>(registerResult &lt; <span class="number">0</span>) <span class="keyword">return</span> registerResult;</span><br><span class="line">    <span class="comment">// 开始执行消息响应</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">epoll_event</span>  <span class="title">events</span>[<span class="title">EVENT_NUM</span>];</span></span><br><span class="line">    <span class="keyword">int</span> epollError;</span><br><span class="line">    <span class="keyword">while</span>(<span class="number">1</span>)&#123;</span><br><span class="line">        <span class="keyword">int</span> count = epoll_wait(epfd, events, EVENT_NUM, <span class="number">-1</span>);</span><br><span class="line">        <span class="keyword">if</span>(count &lt; <span class="number">0</span>)&#123;</span><br><span class="line">            error();</span><br><span class="line">            epollError = count<span class="number">-10</span>;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;count;i++)&#123;</span><br><span class="line">            <span class="keyword">int</span> fd = events[i].data.fd;</span><br><span class="line">            <span class="keyword">if</span>( fd == serverFd)&#123;</span><br><span class="line">                <span class="comment">// 如果fd是server，则说明有客户端连接过来了</span></span><br><span class="line">                acceptClient(epfd, serverFd);</span><br><span class="line">            &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                <span class="comment">// 否则就是客户端就绪</span></span><br><span class="line">                <span class="keyword">if</span>(events[i].events &amp; EPOLLIN)&#123;</span><br><span class="line">                    <span class="comment">// 可读，则接收数据，并监听写就绪</span></span><br><span class="line">                    receiveFromClient(epfd, fd);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span>(events[i].events &amp; EPOLLOUT&#123;</span><br><span class="line">                    <span class="comment">// 可写，则发送数据，并改为监听读就绪</span></span><br><span class="line">                    sendToClient(epfd, fd); <span class="comment">//写</span></span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span>(events[i].events &amp; EPOLLHUP)&#123;</span><br><span class="line">                    <span class="comment">// 对方断开连接，则释放资源</span></span><br><span class="line">                    disconnectClient(epfd, fd);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 在epoll执行过程中发生异常</span></span><br><span class="line">    unregisterFd(epfd, serverFd);</span><br><span class="line">    close(epfd);</span><br><span class="line">    <span class="keyword">return</span> epollError;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 初始化epoll，获取epfd</span></span><br><span class="line"><span class="keyword">int</span> initEpoll()&#123;</span><br><span class="line">    <span class="keyword">int</span> epfd = epoll_create(<span class="number">1</span>);</span><br><span class="line">    <span class="keyword">if</span>(epfd &lt; <span class="number">0</span>)&#123;</span><br><span class="line">        error();</span><br><span class="line">        <span class="keyword">return</span> EPOLL_CREATE_FAIL;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 初始化server socket</span></span><br><span class="line"><span class="keyword">int</span> initServerSocket(struct sockaddr_in* serverAddr, <span class="keyword">int</span> backlog)&#123;</span><br><span class="line">    <span class="keyword">int</span> serverFd;</span><br><span class="line">    <span class="keyword">if</span>((serverFd = socket(PF_INET, SOCK_STREAM, <span class="number">0</span>)) &lt; <span class="number">0</span>)&#123;</span><br><span class="line">        error(); <span class="keyword">return</span> SERVER_SOCKET_CREATE_FAIL;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">int</span> flags = fcntl(sockfd, F_GETFL, <span class="number">0</span>);  <span class="comment">//获取flags。</span></span><br><span class="line">    fcntl(sockfd, F_SETFL, flags | O_NONBLOCK); <span class="comment">//设置成非阻塞模式；</span></span><br><span class="line">    <span class="keyword">if</span>(bind(serverFd, serverAddr, <span class="keyword">sizeof</span>(*address)) &lt; <span class="number">0</span>)&#123;</span><br><span class="line">        error(); <span class="keyword">return</span> SERVER_SOCKET_BIND_FAIL;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(listen(serverFd, backlog) &lt; <span class="number">0</span>)&#123;</span><br><span class="line">        error(); <span class="keyword">return</span> SERVER_SOCKET_LISTEN_FAIL;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> serverFd;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 向epoll中添加监听事件</span></span><br><span class="line"><span class="comment">// status 可选读EPOLLIN或写EPOLLOUT</span></span><br><span class="line"><span class="comment">// op可选添加EPOLL_CTL_ADD或修改EPOLL_CTL_MOD</span></span><br><span class="line"><span class="keyword">int</span> registerFd(<span class="keyword">int</span> epfd, <span class="keyword">int</span> fd, <span class="keyword">int</span> status, <span class="keyword">int</span> op)&#123;</span><br><span class="line">    struct epoll_event epollEvent;</span><br><span class="line">    <span class="built_in">memset</span>(&amp;epollEvent, <span class="number">0</span>, <span class="keyword">sizeof</span>(struct epoll_event));</span><br><span class="line">    <span class="comment">// 添加 status，并设置为边缘触发方式</span></span><br><span class="line">    epollEvent.events = status | EPOLLHUP | EPOLLET;    </span><br><span class="line">    epollEvent.data.fd = fd;</span><br><span class="line">    <span class="keyword">if</span>(epoll_ctl(epfd, op, fd, &amp;epollEvent)&lt;<span class="number">0</span>)&#123;</span><br><span class="line">        <span class="keyword">return</span> EPOLL_REGISTER_FAIL;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 从epoll中注销监听事件</span></span><br><span class="line"><span class="keyword">int</span> unregisterFd(<span class="keyword">int</span> epfd, <span class="keyword">int</span> fd)&#123;</span><br><span class="line">    struct epoll_event epollEvent;</span><br><span class="line">    <span class="built_in">memset</span>(&amp;epollEvent, <span class="number">0</span>, <span class="keyword">sizeof</span>(struct epoll_event));</span><br><span class="line">    <span class="comment">// 添加 status，并设置为边缘触发方式</span></span><br><span class="line">    epollEvent.data.fd = fd;</span><br><span class="line">    <span class="keyword">if</span>(epoll_ctl(epfd, EPOLL_CTL_DEL, fd, &amp;epollEvent)&lt;<span class="number">0</span>)&#123;</span><br><span class="line">        <span class="keyword">return</span> EPOLL_UNREGISTER_FAIL;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 与客户端建立连接</span></span><br><span class="line"><span class="keyword">int</span> accept(<span class="keyword">int</span> epfd, <span class="keyword">int</span> serverFd)&#123;</span><br><span class="line">    struct sockaddr_in clientAddr;</span><br><span class="line">    <span class="keyword">socklen_t</span> clientAddrLen = <span class="keyword">sizeof</span>(clientAddr);</span><br><span class="line">    <span class="comment">// 获得client socket对应的fd</span></span><br><span class="line">    <span class="keyword">int</span> clientFd = accept(serverFd, &amp;clientAddr, &amp;clientAddrLen);</span><br><span class="line">    <span class="keyword">if</span>(clientFd &lt; <span class="number">0</span>)&#123;</span><br><span class="line">        error();</span><br><span class="line">        <span class="keyword">return</span> SERVER_SOCKET_ACCEPT_FAIL;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"client connected"</span>);</span><br><span class="line">    <span class="comment">// 将clientFd注册到epoll中</span></span><br><span class="line">    <span class="keyword">return</span> registerFd(epfd, clientFd);  </span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 从客户端读取数据</span></span><br><span class="line"><span class="keyword">int</span> receiveFromClient(<span class="keyword">int</span> epfd, <span class="keyword">int</span> clientFd)&#123;</span><br><span class="line">    <span class="keyword">char</span> buff[MAX_LEN];</span><br><span class="line">    <span class="keyword">int</span> byteCount = recv(clientFd, buff, MAX_LEN);</span><br><span class="line">    buff[byteCount]=<span class="string">'\0'</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"client: %s\n"</span>, buff);</span><br><span class="line">    <span class="comment">// 接收完成后，将监听事件改为 写EPOLLOUT</span></span><br><span class="line">    registerFd(epfd, clientFd, EPOLLOUT, EPOLL_CTL_MOD);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 向客户端发送数据</span></span><br><span class="line"><span class="keyword">int</span> sendToClient(<span class="keyword">int</span> epfd, <span class="keyword">int</span> clientFd)&#123;</span><br><span class="line">    send(clientFd, <span class="string">"hello"</span>, <span class="number">6</span>);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"server: hello\n"</span>);</span><br><span class="line">    <span class="comment">// 发送完毕后，将监听事件改回 读EPOLLIN</span></span><br><span class="line">    registerFd(epfd, clientFd, EPOLLIN, EPOLL_CTL_MOD);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 与客户端断开连接</span></span><br><span class="line"><span class="keyword">int</span> disconnectClient(<span class="keyword">int</span> epfd, <span class="keyword">int</span> clientFd)&#123;</span><br><span class="line">    unregisterFd(epfd, clientFd);</span><br><span class="line">    close(clientFd);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"client disconnected"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>至此，epoll就算完成了。  </p>
+<p>需要注意的是，上面的代码中，在监听的类型EPOLLIN或EPOLLOUT之后，都增加了EPOLLET的监听类型，这表示是通过Edge-Triggered边缘触发方式进行事件响应，而不是电平触发Level-Triggered（不知道是不是翻译成电平触发，在以前的数字电路中是叫做电平触发的），对于学习过数字电路的朋友对这两种方式应该不会陌生。</p>
+<p>最后总结一下epoll：</p>
+<ol>
+<li>内核态与用户态间的数据拷贝大大减少（只需要传输需要的数据）</li>
+<li>内核中不再需要轮询各个监听的fd（通过中断与回调实现）</li>
+<li>用户态中不再需要轮询各个fd（只将就绪链表中确实就绪的fd返回）</li>
+</ol>
+<h1 id="AIO——Asynchronous-IO"><span class="post-title-index">4. </span><a href="#AIO——Asynchronous-IO" class="headerlink" title="AIO——Asynchronous IO"></a>AIO——Asynchronous IO</h1><p>上面的BIO、NIO都是指在确认IO通道是否就绪的时候，会不会阻塞。当发现有数据，进行读写的时候，依然会阻塞线程。<br>而AIO的A是指，读写的时候也不会阻塞线程（判断是否就绪就更加不会阻塞了）。  </p>
+<p>在Windows上目前已经有AIO的实现了，在Linux上虽然也有（见man aio），但似乎有一些问题。这里就不做介绍了，有兴趣的话可以看看这篇文章：</p>
+<p><a href="https://blog.csdn.net/abcd1f2/article/details/47440087" target="_blank" rel="noopener">Linux kernel AIO这个奇葩</a>  </p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/IO/" rel="tag"># IO</a>
+              <a href="/tags/NIO/" rel="tag"># NIO</a>
+              <a href="/tags/AIO/" rel="tag"># AIO</a>
+              <a href="/tags/ByteBuffer/" rel="tag"># ByteBuffer</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/01/23/Cache-06ZooKeeperAdvance/" rel="prev" title="缓存技术-05-ZooKeeper使用">
+      <i class="fa fa-chevron-left"></i> 缓存技术-05-ZooKeeper使用
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/02/01/Concurrent-Summarizing/" rel="next" title="多线程与高并发-一图总结">
+      多线程与高并发-一图总结 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#阻塞-非阻塞与同步-异步"><span class="nav-text">1. 阻塞&#x2F;非阻塞与同步&#x2F;异步</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#BIO——Blocking-IO"><span class="nav-text">2. BIO——Blocking IO</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#NIO——Non-blocking-IO"><span class="nav-text">3. NIO——Non-blocking IO</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#最基本的非阻塞IO"><span class="nav-text">3.1. 最基本的非阻塞IO</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#利用select完成多客户端轮询"><span class="nav-text">3.2. 利用select完成多客户端轮询</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#poll"><span class="nav-text">3.3. poll</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#epoll"><span class="nav-text">3.4. epoll</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#AIO——Asynchronous-IO"><span class="nav-text">4. AIO——Asynchronous IO</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="吴迪"
+      src="/images/avatar.jpg?raw=true">
+  <p class="site-author-name" itemprop="name">吴迪</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">65</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://beian.miit.gov.cn/" rel="noopener" target="_blank">苏ICP备17000391号 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2020 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">吴迪</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+
+  <script src='https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      var config = {
+        theme:'default',
+        logLevel:'fatal',
+        securityLevel:'strict',
+        startOnLoad:true,
+        arrowMarkerAbsolute:false,
+
+        er:{
+          diagramPadding:20,
+          layoutDirection:'TB',
+          minEntityWidth:100,
+          minEntityHeight:75,
+          entityPadding:15,
+          stroke:'gray',
+          fill:'honeydew',
+          fontSize:12,
+          useMaxWidth:true,
+        },
+        flowchart:{
+          diagramPadding:8,
+          htmlLabels:true,
+          curve:'linear',
+        },
+        sequence:{
+          diagramMarginX:50,
+          diagramMarginY:10,
+          actorMargin:50,
+          width:150,
+          height:65,
+          boxMargin:10,
+          boxTextMargin:5,
+          noteMargin:10,
+          messageMargin:35,
+          messageAlign:'center',
+          mirrorActors:true,
+          bottomMarginAdj:1,
+          useMaxWidth:true,
+          rightAngles:false,
+          showSequenceNumbers:false,
+        },
+        gantt:{
+          titleTopMargin:25,
+          barHeight:20,
+          barGap:4,
+          topPadding:50,
+          leftPadding:75,
+          gridLineStartPadding:35,
+          fontSize:11,
+          fontFamily:'"Open-Sans", "sans-serif"',
+          numberSectionStyles:4,
+          axisFormat:'%Y-%m-%d',
+        }
+      };
+      mermaid.initialize(config);
+    }
+  </script>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'forest',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+
+  
+
+</body>
+</html>
