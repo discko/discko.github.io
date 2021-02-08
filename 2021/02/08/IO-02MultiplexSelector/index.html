@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.wudi.space","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="前文介绍了IO的变迁，从BIO到NIO，但是AIO没有介绍（暂时也不打算学习-，-）本文将从Java提供的API——java.nio包中看看如果编写IO程序。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IO-02-多路复用网络选择器的设计">
+<meta property="og:url" content="https://www.wudi.space/2021/02/08/IO-02MultiplexSelector/index.html">
+<meta property="og:site_name" content="吴迪小站">
+<meta property="og:description" content="前文介绍了IO的变迁，从BIO到NIO，但是AIO没有介绍（暂时也不打算学习-，-）本文将从Java提供的API——java.nio包中看看如果编写IO程序。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.wudi.space/2021/02/08/IO-02MultiplexSelector/ByteBufferClearFlip.png">
+<meta property="og:image" content="https://www.wudi.space/2021/02/08/IO-02MultiplexSelector/ByteBufferAsXXXBuffer.png">
+<meta property="og:image" content="https://www.wudi.space/2021/02/08/IO-02MultiplexSelector/SelectorAndChannel.png">
+<meta property="article:published_time" content="2021-02-08T12:56:50.000Z">
+<meta property="article:modified_time" content="2021-02-08T09:15:33.973Z">
+<meta property="article:author" content="吴迪">
+<meta property="article:tag" content="IO">
+<meta property="article:tag" content="NIO">
+<meta property="article:tag" content="Selector">
+<meta property="article:tag" content="ByteBuffer">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.wudi.space/2021/02/08/IO-02MultiplexSelector/ByteBufferClearFlip.png">
+
+<link rel="canonical" href="https://www.wudi.space/2021/02/08/IO-02MultiplexSelector/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>IO-02-多路复用网络选择器的设计 | 吴迪小站</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">吴迪小站</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.wudi.space/2021/02/08/IO-02MultiplexSelector/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg?raw=true">
+      <meta itemprop="name" content="吴迪">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="吴迪小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          IO-02-多路复用网络选择器的设计
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-02-08 20:56:50 / 修改时间：17:15:33" itemprop="dateCreated datePublished" datetime="2021-02-08T20:56:50+08:00">2021-02-08</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IO%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">IO技术</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><a href="/2021/01/30/IO-01History/">前文介绍了IO的变迁</a>，从BIO到NIO，但是AIO没有介绍（暂时也不打算学习-，-）本文将从Java提供的API——java.nio包中看看如果编写IO程序。<br><a id="more"></a><br>首先，与java.io包下直接操作byte[]不同，java.nio包下大多是通过ByteBuffer类来操作字节。</p>
+<h1 id="ByteBuffer使用"><span class="post-title-index">1. </span><a href="#ByteBuffer使用" class="headerlink" title="ByteBuffer使用"></a>ByteBuffer使用</h1><p>通过<code>ByteBuffer.allocate(capacity)</code>或者<code>ByteBuffer.allocateDirect(capacity)</code>可以在堆内或者堆外（直接内存）开辟一块<code>capacity</code>大小的空间作为Buffer使用；也可以通过<code>ByteBuffer.wrap(byte[])</code>等方式直接开辟一块为value量身打造的空间。</p>
+<p><code>ByteBuffer</code>中有3个变量<code>position</code>、<code>limit</code>、<code>mark</code>。怎么理解呢？<br>首先需要明确如何读写<code>ByteBuffer</code>。读的时候，从当前读取位置开始，一直读到最后一个有效位置；写的时候，往当前写入位置写，一直写到最后一个位置。<br>这里就出现了几个特定的位置：“当前读取位置”、“最后一个有效位置”、“当前写入位置”、“最后一个位置”。  </p>
+<ul>
+<li>“当前读取位置”：逐字节读取，每次读取这个位置的字符，然后这个位置向后移动一个，直到达到最后一个有效位置。</li>
+<li>“最后一个有效位置”：读的时候需要标记出来最后一个字节在什么地方，不能超出。因为超出后的字节是未定义的。</li>
+<li>“当前写入位置”：逐字节写入，每一个字符都要写在这个位置，然后这个位置向后移动一个，让后续写时能够找到合适的位置。</li>
+<li>“最后一个位置”：也即该片内存的尾位置，或者认为是数组的尾单元。  </li>
+</ul>
+<p>于是，通过<code>position</code>来标记当前的读写的位置，将<code>limit</code>作为最后一个有效位置。为了让ByteBuffer支持reset（也就是恢复position到某一个特定位置），还需要<code>mark</code>去记录。这样，通过这3个变量，就可以完成ByteBuffer的操作了。  </p>
+<p>比如，先写再读再写的场景：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 向buffer中写</span></span><br><span class="line"><span class="keyword">while</span>(hasNextByte() &amp;&amp; position &lt; limit)&#123;</span><br><span class="line">    buffer[position++] = nextByte()</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 然后从buffer中读</span></span><br><span class="line"><span class="comment">// 读取的位置需要回到0，但是读取的结尾需要限制</span></span><br><span class="line">limit = position;</span><br><span class="line">position = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">while</span>(position &lt; limit)&#123;</span><br><span class="line">    readByte(buffer[position++]);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 再向buffer中写</span></span><br><span class="line"><span class="comment">// 直接从0位置覆盖</span></span><br><span class="line">position = <span class="number">0</span>;</span><br><span class="line">limit = capacity;</span><br><span class="line"><span class="keyword">while</span>(hasNextByte() &amp;&amp; position &lt; limit)&#123;</span><br><span class="line">    buffer[position++] = nextByte()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>这样就能看出来了，当从写到读时，通常需要将<code>limit</code>置为当前的<code>position</code>，然后<code>position</code>清零；而从读到写时，通常需要将<code>limit</code>的限制取消，而<code>position</code>清零。对应于这两个过程，就是<code>flip()</code>和<code>clear()</code>，也就是：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// java.nio.Buffer</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> Buffer <span class="title">flip</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    limit = position;</span><br><span class="line">    position = <span class="number">0</span>;</span><br><span class="line">    mark = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> Buffer <span class="title">clear</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    position = <span class="number">0</span>;</span><br><span class="line">    limit = capacity;</span><br><span class="line">    mark = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br><img src="/2021/02/08/IO-02MultiplexSelector/ByteBufferClearFlip.png" alt="ByteBuffer Clear and Flip"><br>当然还有一些特殊情况下，<code>limit</code>只需要保持现在的值，而将<code>position</code>归零（比如需要对buffer内的同一内容多次读取），则直接使用<code>rewind</code>也就是倒带：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// java.nio.Buffer</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> Buffer <span class="title">rewind</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    position = <span class="number">0</span>;</span><br><span class="line">    mark = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>而如果不是让<code>position</code>回到0，而是某个特定的位置，则首先通过<code>mark()</code>设置mark为当前<code>position</code>，当p<code>osition</code>漂移后，通过<code>reset()</code>来重置<code>position</code>到<code>mark</code>的位置：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// java.nio.Buffer</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> Buffer <span class="title">mark</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    mark = position;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> Buffer <span class="title">reset</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> m = mark;</span><br><span class="line">    <span class="keyword">if</span> (m &lt; <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> InvalidMarkException();</span><br><span class="line">    position = m;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">final</span> <span class="keyword">void</span> <span class="title">discardMark</span><span class="params">()</span> </span>&#123;                          <span class="comment">// package-private</span></span><br><span class="line">    mark = -<span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>在flip、clear、rewind时都会清除<code>mark</code>，此外还可以通过<code>discardMark()</code>来清除<code>mark</code>。  </p>
+<p>此外，需要注意的是，虽然<code>ByteBuffer</code>有诸如<code>asCharBuffer()</code>、<code>asIntBuffer()</code>、<code>asDoubleBuffer()</code>这样的方法，来对同一段数据采用不同的视图来操作（也即将同一个空间看做char或int或double之类构成的数组），但是得到的相应的<code>CharBuffer</code>、<code>IntBuffer</code>等视图与原来的<code>ByteBuffer</code>是不共享<code>position</code>、<code>limit</code>、<code>mark</code>和<code>capacity</code>的，而且这4个参数的单位也会变成视图中的元素，也就是说对于<code>IntBuffer</code>，如果执行<code>readInt</code>，<code>IntBuffer.position</code>还是只会+1，而原来的<code>ByteBuffer.position</code>不变。<br>而且在<code>asXXXBuffer</code>创建新视图的时候，只会将<code>ByteBuffer</code>中目前剩余的部分（也就是<code>position</code>到<code>limit</code>之间的部分）作为新视图可以操作的部分。因此如果需要对<code>ByteBuffer</code>中已经有的数据，通过其他的视图读写，一定要将position设置为0。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">ByteBuffer bb = ByteBuffer.allocate(<span class="number">12</span>);</span><br><span class="line"><span class="comment">// 向bb中写入0x00000001, 0x0000002, 0x00000003</span></span><br><span class="line">bb.put(<span class="keyword">new</span> <span class="keyword">byte</span>[]&#123;(<span class="keyword">byte</span>)<span class="number">0</span>, (<span class="keyword">byte</span>)<span class="number">0</span>, (<span class="keyword">byte</span>)<span class="number">0</span>, (<span class="keyword">byte</span>)<span class="number">1</span>, (<span class="keyword">byte</span>)<span class="number">0</span>, (<span class="keyword">byte</span>)<span class="number">0</span>, (<span class="keyword">byte</span>)<span class="number">0</span>, (<span class="keyword">byte</span>)<span class="number">2</span>, (<span class="keyword">byte</span>)<span class="number">0</span>, (<span class="keyword">byte</span>)<span class="number">0</span>, (<span class="keyword">byte</span>)<span class="number">0</span>, (<span class="keyword">byte</span>)<span class="number">3</span>&#125;);</span><br><span class="line">bb.position(<span class="number">4</span>);</span><br><span class="line">System.out.println(bb); <span class="comment">// [pos=4 lim=12 cap=12]</span></span><br><span class="line">IntBuffer ib = bb.asIntBuffer();</span><br><span class="line">System.out.println(ib.get());   <span class="comment">// 2</span></span><br><span class="line">System.out.println(ib.get());   <span class="comment">// 3</span></span><br><span class="line">ib.clear();</span><br><span class="line">System.out.println(ib.get());   <span class="comment">// 2</span></span><br></pre></td></tr></table></figure><br><img src="/2021/02/08/IO-02MultiplexSelector/ByteBufferAsXXXBuffer.png" alt="ByteBuffer changes view">  </p>
+<p>如果ByteBuffer中剩余的部分不是目标视图的单元大小的整数倍，则会通过向下取整确定视图的大小（也就是抛弃靠后的无法对其的容量），这从源码中也可以看出来：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> LongBuffer <span class="title">asLongBuffer</span><span class="params">()</span> </span>&#123;  <span class="comment">//转换为Long视图</span></span><br><span class="line">    <span class="keyword">int</span> size = <span class="keyword">this</span>.remaining() &gt;&gt; <span class="number">3</span>;   <span class="comment">//remaining = limit - position，每一个long占8个字节，所以&gt;&gt;3</span></span><br><span class="line">    <span class="keyword">int</span> off = offset + position();  <span class="comment">// offset恒为0</span></span><br><span class="line">    <span class="keyword">return</span> (bigEndian   <span class="comment">// 大小端</span></span><br><span class="line">        ? (LongBuffer)(<span class="keyword">new</span> ByteBufferAsLongBufferB(<span class="keyword">this</span>,    <span class="comment">// 持有数据</span></span><br><span class="line">                                                    -<span class="number">1</span>,     <span class="comment">// mark</span></span><br><span class="line">                                                    <span class="number">0</span>,      <span class="comment">// position</span></span><br><span class="line">                                                    size,   <span class="comment">// limit</span></span><br><span class="line">                                                    size,   <span class="comment">//capacity</span></span><br><span class="line">                                                    off))   <span class="comment">// 在内存单元中的偏移基量</span></span><br><span class="line">        : (LongBuffer)(<span class="keyword">new</span> ByteBufferAsLongBufferL(<span class="keyword">this</span>,</span><br><span class="line">                                                    -<span class="number">1</span>,</span><br><span class="line">                                                    <span class="number">0</span>,</span><br><span class="line">                                                    size,</span><br><span class="line">                                                    size,</span><br><span class="line">                                                    off)));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h1 id="使用"><span class="post-title-index">2. </span><a href="#使用" class="headerlink" title="使用"></a>使用</h1><p>本节代码见<a href="https://github.com/discko/learnio/tree/master/nio/src/main/java/space/wudi/learnio/nio" target="_blank" rel="noopener">我的GitHub仓库</a>。</p>
+<p>在java.nio中，使用Selector作为选择器，将各个端点作为Channel，注册到Selector上，并监听相应的事件，做出相应的处理，这与linux内核中的select、poll、epoll的思想是一致的。<br>在java.nio中，会默认使用当前操作系统中最好的多路复用工具。对于Linux而言，一般是epoll，对于FreeBSD（如MacOS的Darwin）而言，则是kqueue（与epoll有一定的相似性，但不完全一样）。如果想要切换多路复用器，可以修改启动参数：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">-Djava.nio.channels.spi.SelectorProvider=SelectorProviderName</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">SelectorProviderName为一个SelectorProvider的全限定名，在Darwin中内置的有：  </span></span><br><span class="line"><span class="comment">sun.nio.ch.KQueueSelectorProvider</span></span><br><span class="line"><span class="comment">sun.nio.ch.PollSelectorProvider</span></span><br><span class="line"><span class="comment">sun.nio.ch.SelectorProviderImpl</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">而默认使用的sun.nio.ch.DefaultSelectorProvider中会直接返回KQueueSelectorProvider</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">其他内核的同理</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure></p>
+<h2 id="设立一个小目标"><span class="post-title-index">2.1. </span><a href="#设立一个小目标" class="headerlink" title="设立一个小目标"></a>设立一个小目标</h2><p>首先，我们设立一个小目标，使用java.nio.Selector来做点啥。  </p>
+<ol>
+<li>设计一个“智能对话机器人”，能够自动回复客户端发来的句子</li>
+<li>对连接进行分线程处理，具体而言：<ul>
+<li>一个线程用于用户连接的接受（acceptor），可以开启多个端口进行处理</li>
+<li>多个线程作为工作线程（worker），将acceptor接受的客户端在工作线程中对话处理</li>
+<li>允许根据不同的客户端（如根据IP分），使用不同的应对方式（比如回复加入口音）</li>
+</ul>
+</li>
+</ol>
+<p>这样的话，就可以按照select的语法进行编写了。</p>
+<h2 id="错误的写法导致的死锁"><span class="post-title-index">2.2. </span><a href="#错误的写法导致的死锁" class="headerlink" title="错误的写法导致的死锁"></a>错误的写法导致的死锁</h2><p>错误的写法：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Thread-Worker, on loop</span></span><br><span class="line"><span class="keyword">while</span>(<span class="keyword">true</span>)&#123;</span><br><span class="line">    <span class="keyword">int</span> num = selector.select();</span><br><span class="line">    <span class="keyword">if</span>(num &gt; <span class="number">0</span> )&#123;</span><br><span class="line">        Iterator&lt;SelectionKey&gt; iterator = selector.selectedKeys().iterator();</span><br><span class="line">        <span class="keyword">while</span>(iterator.hasNext())&#123;</span><br><span class="line">            SelectionKey key = iterator.next();</span><br><span class="line">            iterator.remove();</span><br><span class="line">            <span class="keyword">if</span>(key.isAcceptable())&#123;</span><br><span class="line">                handleAccept(key);</span><br><span class="line">            &#125;<span class="keyword">else</span> <span class="keyword">if</span>(key.isReadable() || key.isWritable())&#123;</span><br><span class="line">                handleReadWrite(key);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// Thread-Init, on init</span></span><br><span class="line"><span class="keyword">new</span> Thread(workerRunnable, <span class="string">"Thread-Worker"</span>).start();</span><br><span class="line">ServerSocketChannel server = ServerSocketChannel.open();</span><br><span class="line">server.register(workerRunnable.selector, OP_ACCEPT);    <span class="comment">// 阻塞在这里</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Thread-Server, on accept</span></span><br><span class="line">ServerSocketChannel server = selectionKey.channel();</span><br><span class="line">SocketChannel client = server.accept();</span><br><span class="line">client.register(workerRunnable.selector, OP_READ, handler); <span class="comment">// 阻塞在这里</span></span><br></pre></td></tr></table></figure><br>这两个线程会因为<code>selector.select()</code>的锁，导致<code>channel.register(select)</code>被阻塞，无法成功注册。而如果将<code>Thread-Init</code>中改成这样：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">new</span> Thread(workerRunnable, <span class="string">"Thread-Worker"</span>).start();</span><br><span class="line">ServerSocketChannel server = ServerSocketChannel.open();</span><br><span class="line">workRunnable.selector.wakeup()；</span><br><span class="line">server.register(workerRunnable.selector, OP_ACCEPT);</span><br></pre></td></tr></table></figure><br>则一定概率下仍然会因为锁竞争而阻塞，因为在<code>Thread-Worker</code>中，因为num为0而快速loop回到<code>selector.select()</code>造成锁无法获得。  </p>
+<p>锁竞争的相关代码在这里：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// selector.select()实际调用的是SelectorImpl.lockAndDoSelect()方法</span></span><br><span class="line"><span class="comment">// sun.nio.ch.SelectorImpl#lockAndDoSelect</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">lockAndDoSelect</span><span class="params">(<span class="keyword">long</span> var1)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">    <span class="keyword">synchronized</span>(<span class="keyword">this</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="keyword">this</span>.isOpen()) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ClosedSelectorException();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            Set var4 = <span class="keyword">this</span>.publicKeys;</span><br><span class="line">            <span class="keyword">int</span> var10000;</span><br><span class="line">            <span class="keyword">synchronized</span>(<span class="keyword">this</span>.publicKeys) &#123;</span><br><span class="line">                Set var5 = <span class="keyword">this</span>.publicSelectedKeys;</span><br><span class="line">                <span class="keyword">synchronized</span>(<span class="keyword">this</span>.publicSelectedKeys) &#123;</span><br><span class="line">                    var10000 = <span class="keyword">this</span>.doSelect(var1);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> var10000;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// register实际调用的是SelectorImpl.register()方法</span></span><br><span class="line"><span class="comment">// sun.nio.ch.SelectorImpl#register</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">final</span> SelectionKey <span class="title">register</span><span class="params">(AbstractSelectableChannel var1, <span class="keyword">int</span> var2, Object var3)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!(var1 <span class="keyword">instanceof</span> SelChImpl)) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalSelectorException();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        SelectionKeyImpl var4 = <span class="keyword">new</span> SelectionKeyImpl((SelChImpl)var1, <span class="keyword">this</span>);</span><br><span class="line">        var4.attach(var3);</span><br><span class="line">        Set var5 = <span class="keyword">this</span>.publicKeys;</span><br><span class="line">        <span class="keyword">synchronized</span>(<span class="keyword">this</span>.publicKeys) &#123;</span><br><span class="line">            <span class="keyword">this</span>.implRegister(var4);</span><br><span class="line">        &#125;</span><br><span class="line">        var4.interestOps(var2);</span><br><span class="line">        <span class="keyword">return</span> var4;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>由于<code>selector.select()</code>和<code>selectionKey.register(selector, op)</code>中的<code>selector</code>是同一个对象，而这两个方法的底层调用的都是<code>SelectorImpl</code>中的方法，都对<code>this.publicKeys</code>进行<code>synchronized</code>。所以如果select和register发生在不同的线程，而且select先行执行并阻塞，那么register将等待锁释放而被挂起。而select只有当被register的事件发生时才能释放，register又被挂起了，这样的互相阻塞就就死锁。<br>解决方案有2个。<br>由于select()方法可以接受一个long类型的参数作为<code>timeout</code>。所以可以设置一个合适的时间让其自动释放锁。但这个方法并不太好，因为为了避免这个情况，需要每隔timeout的时间就将线程唤醒造成空转，这显然是不经济的；而且在有客户端连接过来时，每一个新连接，最长都需要等待<code>timeout</code>的延时，这显然也是不合理的。<br>为此，可以将register事件放到<code>Thread-Worker</code>的这个loop中，在其他线程中需要register的时候通过<code>selector.wakeup()</code>将<code>selector.select()</code>手动唤醒：  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 在需要注册的地方调用该方法：</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addRegisterQueueAndWakeUpSelector</span><span class="params">(RegisterHolder channelHolder)</span></span>&#123;</span><br><span class="line">    <span class="comment">// 将需要注册的channel放入RegisterHolder中</span></span><br><span class="line">    <span class="comment">// 然后将channelHolder加入到待注册队列registerQueue中</span></span><br><span class="line">    registerQueue.add(channelHolder);</span><br><span class="line">    <span class="comment">// 接下来唤醒被阻塞的selector</span></span><br><span class="line">    selector.wakeup();</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// registerQueue是一个阻塞链表</span></span><br><span class="line"><span class="keyword">private</span> LinkedBlockingQueue&lt;RegisterHolder&gt; registerQueue;</span><br></pre></td></tr></table></figure>
+<p>然后，在主事件循环中，就能将阻塞的select方法唤醒：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 纤程内循环</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="keyword">while</span>(<span class="keyword">true</span>)&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">int</span> num = selector.select();    <span class="comment">// block util event happens or be waken up</span></span><br><span class="line">            <span class="keyword">if</span>(num &gt; <span class="number">0</span> )&#123;</span><br><span class="line">                <span class="comment">// 当有事件而结束阻塞时</span></span><br><span class="line">                Iterator&lt;SelectionKey&gt; iterator = selector.selectedKeys().iterator();</span><br><span class="line">                <span class="keyword">while</span>(iterator.hasNext())&#123;  <span class="comment">// 遍历有事件的key</span></span><br><span class="line">                    SelectionKey key = iterator.next();</span><br><span class="line">                    iterator.remove();  <span class="comment">// 记得移除，下面解释</span></span><br><span class="line">                    <span class="keyword">if</span>(key.isAcceptable())&#123; </span><br><span class="line">                        <span class="comment">// 只有acceptor会进入该分支</span></span><br><span class="line">                        handleAccept(key);  <span class="comment">// 处理accept事件</span></span><br><span class="line">                    &#125;<span class="keyword">else</span> <span class="keyword">if</span>(key.isReadable() || key.isWritable())&#123;</span><br><span class="line">                        <span class="comment">// 只有worker会进入该分支</span></span><br><span class="line">                        handleReadWrite(key);   <span class="comment">// 处理IO事件</span></span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">while</span>(!registerQueue.isEmpty())&#123;</span><br><span class="line">                <span class="comment">// 在被wakeup唤醒后，或执行完上面的遍历后，都会进入到这里</span></span><br><span class="line">                <span class="comment">// 将待注册队列中的channel一个个取出，注册到本线程的selector上</span></span><br><span class="line">                RegisterHolder registerHolder = registerQueue.take();</span><br><span class="line">                <span class="comment">// 执行注册，因为此时没有被select阻塞</span></span><br><span class="line">                <span class="comment">// 所以可以顺利完成</span></span><br><span class="line">                registerHolder.register(selector, handlerBuilder);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException | InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="一个细节导致重复处理事件"><span class="post-title-index">2.3. </span><a href="#一个细节导致重复处理事件" class="headerlink" title="一个细节导致重复处理事件"></a>一个细节导致重复处理事件</h2><p>在上面主事件循环的代码中可以看到，在遍历发生了事件的key时，会把SelectedKeys中的key一个个remove掉。如果不这么做，即使该key没有新的事件，在下一次被唤醒后，SelectedKeys这个集合中，仍然会存在这个key。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span>(iterator.hasNext())&#123;  <span class="comment">// 遍历有事件的key</span></span><br><span class="line">    SelectionKey key = iterator.next();</span><br><span class="line">    iterator.remove();  <span class="comment">// 为什么要移除</span></span><br><span class="line">    <span class="keyword">if</span>(key.isAcceptable())&#123; </span><br><span class="line">        handleAccept(key);  </span><br><span class="line">    &#125;<span class="keyword">else</span> <span class="keyword">if</span>(key.isReadable() || key.isWritable())&#123;</span><br><span class="line">        handleReadWrite(key); </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>那么这是为什么呢？<br>我们来看一下源码。我目前使用的是Mac，所以Selector的具体实现是KQueue，不过相信Epoll的实现也是一样的。<br>在KQueue中，调用<code>Selector.select()</code>后，内部实际通过<code>doSelect()</code>调用<code>KQueueArrayWrapper.poll()</code>获得发生事件的key的集合，然后通过<code>updateSelectedKeys()</code>方法，将发生事件的key放入<code>selectedKeys</code>这个Set中。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// sun.nio.ch.KQueueSelectorImpl#updateSelectedKeys</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">updateSelectedKeys</span><span class="params">(<span class="keyword">int</span> count)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> var2 = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">boolean</span> var3 = <span class="keyword">false</span>;</span><br><span class="line">    ++<span class="keyword">this</span>.updateCount;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> var4 = <span class="number">0</span>; var4 &lt; count; ++var4) &#123;</span><br><span class="line">        <span class="keyword">int</span> var5 = <span class="keyword">this</span>.kqueueWrapper.getDescriptor(var4);</span><br><span class="line">        <span class="keyword">if</span> (var5 == <span class="keyword">this</span>.fd0) &#123;</span><br><span class="line">            var3 = <span class="keyword">true</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            KQueueSelectorImpl.MapEntry var6 = (KQueueSelectorImpl.MapEntry)<span class="keyword">this</span>.fdMap.get(var5);</span><br><span class="line">            <span class="keyword">if</span> (var6 != <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="keyword">int</span> var7 = <span class="keyword">this</span>.kqueueWrapper.getReventOps(var4);</span><br><span class="line">                SelectionKeyImpl var8 = var6.ski;</span><br><span class="line">                <span class="keyword">if</span> (<span class="keyword">this</span>.selectedKeys.contains(var8)) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (var6.updateCount != <span class="keyword">this</span>.updateCount) &#123;</span><br><span class="line">                        <span class="keyword">if</span> (var8.channel.translateAndSetReadyOps(var7, var8)) &#123;</span><br><span class="line">                            ++var2;</span><br><span class="line">                            var6.updateCount = <span class="keyword">this</span>.updateCount;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        var8.channel.translateAndUpdateReadyOps(var7, var8);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    var8.channel.translateAndSetReadyOps(var7, var8);</span><br><span class="line">                    <span class="keyword">if</span> ((var8.nioReadyOps() &amp; var8.nioInterestOps()) != <span class="number">0</span>) &#123;</span><br><span class="line">                        <span class="comment">// 重点在这里</span></span><br><span class="line">                        <span class="comment">// 只是通过add加入selectedKeys集合</span></span><br><span class="line">                        <span class="keyword">this</span>.selectedKeys.add(var8);</span><br><span class="line">                        ++var2;</span><br><span class="line">                        var6.updateCount = <span class="keyword">this</span>.updateCount;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (var3) &#123;</span><br><span class="line">        <span class="keyword">synchronized</span>(<span class="keyword">this</span>.interruptLock) &#123;</span><br><span class="line">            IOUtil.drain(<span class="keyword">this</span>.fd0);</span><br><span class="line">            <span class="keyword">this</span>.interruptTriggered = <span class="keyword">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> var2;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>可以看到，里面仅仅调用了add方法，将发生了事件的key放入selectedKeys中，而没有每次都清理一下selectedKeys。  </p>
+<p>另外可能有人要问了，明明在外部调用的selector.selectedKeys()这个方法返回的是publicSelectedKeys，为什么这里操作selectedKeys呢？明明实现类没有覆盖父类的方法啊。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// sun.nio.ch.SelectorImpl</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Set&lt;SelectionKey&gt; <span class="title">selectedKeys</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!<span class="keyword">this</span>.isOpen() &amp;&amp; !Util.atBugLevel(<span class="string">"1.4"</span>)) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> ClosedSelectorException();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.publicSelectedKeys;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>这还要从publicSelectedKeys的定义说起。下面是SelectorImpl的构造函数，KQueue继承自它，自然也会调用这个构造函数。在下面，会执行else分支（当然不论哪一个，都可以看出来，publicSelectedKeys都是通过selectedKeys构造而来的），而<code>Util.ungrowableSet()</code>方法只是将selectedKeys包装了一下，屏蔽对selectedKeys的修改，保留了对selectedKeys的访问。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="title">SelectorImpl</span><span class="params">(SelectorProvider var1)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>(var1);</span><br><span class="line">    <span class="keyword">if</span> (Util.atBugLevel(<span class="string">"1.4"</span>)) &#123;</span><br><span class="line">        <span class="keyword">this</span>.publicKeys = <span class="keyword">this</span>.keys;</span><br><span class="line">        <span class="keyword">this</span>.publicSelectedKeys = <span class="keyword">this</span>.selectedKeys;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">this</span>.publicKeys = Collections.unmodifiableSet(<span class="keyword">this</span>.keys);</span><br><span class="line">        <span class="keyword">this</span>.publicSelectedKeys = Util.ungrowableSet(<span class="keyword">this</span>.selectedKeys);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// sun.nio.ch.Util</span></span><br><span class="line"><span class="keyword">static</span> &lt;E&gt; <span class="function">Set&lt;E&gt; <span class="title">ungrowableSet</span><span class="params">(<span class="keyword">final</span> Set&lt;E&gt; var0)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> Set&lt;E&gt;() &#123;</span><br><span class="line">        <span class="comment">// 对publicSelectedKeys的访问，被代理到了selectedKeys上</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">size</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> var0.size();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">public</span> Object[] toArray() &#123;</span><br><span class="line">            <span class="keyword">return</span> var0.toArray();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> Iterator&lt;E&gt; <span class="title">iterator</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> var0.iterator();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">remove</span><span class="params">(Object var1)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> var0.remove(var1);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 省略其他操作</span></span><br><span class="line">        <span class="comment">// 下面的对set的修改直接返回UnsupportOperation</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">add</span><span class="params">(E var1)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> UnsupportedOperationException();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">addAll</span><span class="params">(Collection&lt;? extends E&gt; var1)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> UnsupportedOperationException();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="流程"><span class="post-title-index">2.4. </span><a href="#流程" class="headerlink" title="流程"></a>流程</h2><p>最终执行的流程大致就是：</p>
+<ol>
+<li>使用时通过<code>new ServerSelectorGroup(ports, workers, clientHanderBuilder)</code>来创建一个selector组。</li>
+<li>这个selector组会初始化workers个工作线程和1个acceptor线程，并根据ports启动各个listener服务。然后将这些listener服务注册到acceptor线程中。</li>
+<li>acceptor线程在select处阻塞，直到新客户端建立连接，accept它，并将其注册到某个worker中。</li>
+<li>worker中也阻塞在selector处，直到注册的客户端读或写就绪，然后根据key调用其对应的clientHandler。</li>
+</ol>
+<p><img src="/2021/02/08/IO-02MultiplexSelector/SelectorAndChannel.png" alt="Selector And Channel"></p>
+<p>代码见<a href="https://github.com/discko/learnio/tree/master/nio/src/main/java/space/wudi/learnio/nio" target="_blank" rel="noopener">我的GitHub仓库</a>。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/IO/" rel="tag"># IO</a>
+              <a href="/tags/NIO/" rel="tag"># NIO</a>
+              <a href="/tags/Selector/" rel="tag"># Selector</a>
+              <a href="/tags/ByteBuffer/" rel="tag"># ByteBuffer</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/02/03/Concurrent-ReorderAndThisExcape/" rel="prev" title="多线程与高并发-指令重排序与This逸出">
+      <i class="fa fa-chevron-left"></i> 多线程与高并发-指令重排序与This逸出
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ByteBuffer使用"><span class="nav-text">1. ByteBuffer使用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用"><span class="nav-text">2. 使用</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#设立一个小目标"><span class="nav-text">2.1. 设立一个小目标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#错误的写法导致的死锁"><span class="nav-text">2.2. 错误的写法导致的死锁</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一个细节导致重复处理事件"><span class="nav-text">2.3. 一个细节导致重复处理事件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#流程"><span class="nav-text">2.4. 流程</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="吴迪"
+      src="/images/avatar.jpg?raw=true">
+  <p class="site-author-name" itemprop="name">吴迪</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">43</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://beian.miit.gov.cn/" rel="noopener" target="_blank">苏ICP备17000391号 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2020 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">吴迪</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+
+  <script src='https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      var config = {
+        theme:'default',
+        logLevel:'fatal',
+        securityLevel:'strict',
+        startOnLoad:true,
+        arrowMarkerAbsolute:false,
+
+        er:{
+          diagramPadding:20,
+          layoutDirection:'TB',
+          minEntityWidth:100,
+          minEntityHeight:75,
+          entityPadding:15,
+          stroke:'gray',
+          fill:'honeydew',
+          fontSize:12,
+          useMaxWidth:true,
+        },
+        flowchart:{
+          diagramPadding:8,
+          htmlLabels:true,
+          curve:'linear',
+        },
+        sequence:{
+          diagramMarginX:50,
+          diagramMarginY:10,
+          actorMargin:50,
+          width:150,
+          height:65,
+          boxMargin:10,
+          boxTextMargin:5,
+          noteMargin:10,
+          messageMargin:35,
+          messageAlign:'center',
+          mirrorActors:true,
+          bottomMarginAdj:1,
+          useMaxWidth:true,
+          rightAngles:false,
+          showSequenceNumbers:false,
+        },
+        gantt:{
+          titleTopMargin:25,
+          barHeight:20,
+          barGap:4,
+          topPadding:50,
+          leftPadding:75,
+          gridLineStartPadding:35,
+          fontSize:11,
+          fontFamily:'"Open-Sans", "sans-serif"',
+          numberSectionStyles:4,
+          axisFormat:'%Y-%m-%d',
+        }
+      };
+      mermaid.initialize(config);
+    }
+  </script>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'forest',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+
+  
+
+</body>
+</html>
