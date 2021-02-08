@@ -1,5 +1,5 @@
 ---
-title: 缓存技术-05-ZooKeeper使用
+title: 缓存技术-06-ZooKeeper使用
 tags:
   - ZooKeeper
   - 配置管理
