@@ -65,7 +65,7 @@ public final Buffer clear() {
     return this;
 }
 ```
-![ByteBuffer Clear and Flip](IO-01HistoryAndByteBuffer/ByteBufferClearFlip.png)  
+![ByteBuffer Clear and Flip](IO-02MultiplexSelector/ByteBufferClearFlip.png)  
 当然还有一些特殊情况下，`limit`只需要保持现在的值，而将`position`归零（比如需要对buffer内的同一内容多次读取），则直接使用`rewind`也就是倒带：
 ```java
 // java.nio.Buffer
@@ -110,7 +110,7 @@ System.out.println(ib.get());   // 3
 ib.clear();
 System.out.println(ib.get());   // 2
 ```
-![ByteBuffer changes view](IO-01HistoryAndByteBuffer/ByteBufferAsXXXBuffer.png)  
+![ByteBuffer changes view](IO-02MultiplexSelector/ByteBufferAsXXXBuffer.png)  
 
 如果ByteBuffer中剩余的部分不是目标视图的单元大小的整数倍，则会通过向下取整确定视图的大小（也就是抛弃靠后的无法对其的容量），这从源码中也可以看出来：
 ```java
