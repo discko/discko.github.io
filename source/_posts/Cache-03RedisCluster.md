@@ -252,7 +252,7 @@ Reading messages... (press Ctrl-C to quit)
 ## 网络分区时的一致性
 比如现在有Redis1(M)、Redis2(S)、Redis3(S)一主二从，以及3个哨兵Sentinel1、Sentinel2、Sentinel3。因为网络问题，Redis1与Sentinel1与另外4个隔离了。但Redis1与Sentinel1能够通信，Redis2、Redis3、Sentinel2、Sentinel3这4个也能彼此通信。  
 
-![SentinelConsistencyWhenPartition](source/_drafts/Cache-03RedisCluster/SentinelConsistencyWhenPartition.png) 
+![SentinelConsistencyWhenPartition](Cache-03RedisCluster/SentinelConsistencyWhenPartition.png) 
 
 这时，Redis2与Redis3通过Sentinel2与Sentinel3选举出了新的Master。但由于Redis1只是对Redis2和Redis3不可见，因此Redis1依然持续在对外暴露读写服务。  
 
