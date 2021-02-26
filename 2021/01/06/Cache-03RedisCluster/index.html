@@ -33,14 +33,14 @@
 <meta property="og:image" content="https://www.wudi.space/2021/01/06/Cache-03RedisCluster/ProcedureOfRedisReplication.png">
 <meta property="og:image" content="https://www.wudi.space/2021/01/06/Cache-03RedisCluster/OfficialExplanationForExpireKeyWhenReplicating.png">
 <meta property="og:image" content="https://www.wudi.space/2021/01/06/Cache-03RedisCluster/CommunicationBetweenSentinels.png">
-<meta property="og:image" content="https://www.wudi.space/2021/01/06/Cache-03RedisCluster/_drafts/Cache-03RedisCluster/SentinelConsistencyWhenPartition.png">
+<meta property="og:image" content="https://www.wudi.space/2021/01/06/Cache-03RedisCluster/SentinelConsistencyWhenPartition.png">
 <meta property="og:image" content="https://www.wudi.space/2021/01/06/Cache-03RedisCluster/RedisSplittedByBusiness.png">
 <meta property="og:image" content="https://www.wudi.space/2021/01/06/Cache-03RedisCluster/RedisSharding.png">
 <meta property="og:image" content="https://www.wudi.space/2021/01/06/Cache-03RedisCluster/HashCircle.png">
 <meta property="og:image" content="https://www.wudi.space/2021/01/06/Cache-03RedisCluster/RedisAndProxy.png">
 <meta property="og:image" content="https://www.wudi.space/2021/01/06/Cache-03RedisCluster/RedisClusterSlot.png">
 <meta property="article:published_time" content="2021-01-06T01:34:05.000Z">
-<meta property="article:modified_time" content="2021-01-15T14:23:26.496Z">
+<meta property="article:modified_time" content="2021-02-26T05:39:53.375Z">
 <meta property="article:author" content="吴迪">
 <meta property="article:tag" content="Redis">
 <meta property="article:tag" content="主从复制">
@@ -210,7 +210,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-01-15 22:23:26" itemprop="dateModified" datetime="2021-01-15T22:23:26+08:00">2021-01-15</time>
+                <time title="修改时间：2021-02-26 13:39:53" itemprop="dateModified" datetime="2021-02-26T13:39:53+08:00">2021-02-26</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -348,7 +348,7 @@ D-->F((趋近HA))</pre>
 <p><img src="/2021/01/06/Cache-03RedisCluster/CommunicationBetweenSentinels.png" alt="CommunicationBetweenSentinels">  </p>
 <p>所以，如果客户端需要在Master掉线后，重新找到Master和Slave的列表，就需要去监听至少1个Sentinel的pubsub的<code>+switch-master</code>通道，然后获取新Master的位置，最后获取Slave列表。</p>
 <h2 id="网络分区时的一致性"><span class="post-title-index">3.3. </span><a href="#网络分区时的一致性" class="headerlink" title="网络分区时的一致性"></a>网络分区时的一致性</h2><p>比如现在有Redis1(M)、Redis2(S)、Redis3(S)一主二从，以及3个哨兵Sentinel1、Sentinel2、Sentinel3。因为网络问题，Redis1与Sentinel1与另外4个隔离了。但Redis1与Sentinel1能够通信，Redis2、Redis3、Sentinel2、Sentinel3这4个也能彼此通信。  </p>
-<p><img src="/2021/01/06/Cache-03RedisCluster/_drafts/Cache-03RedisCluster/SentinelConsistencyWhenPartition.png" alt="SentinelConsistencyWhenPartition"> </p>
+<p><img src="/2021/01/06/Cache-03RedisCluster/SentinelConsistencyWhenPartition.png" alt="SentinelConsistencyWhenPartition"> </p>
 <p>这时，Redis2与Redis3通过Sentinel2与Sentinel3选举出了新的Master。但由于Redis1只是对Redis2和Redis3不可见，因此Redis1依然持续在对外暴露读写服务。  </p>
 <p>接下来，问题来了。当Redis1与Redis2、3的网络分区恢复后，因为Sentinel2和Sentinel3已经将Redis2选为新的Master了，所以Redis1只能忽略掉自己在此期间的写操作，将Redis2同步过来。对于把Redis当做缓存可能没什么，但如果将Redis作为数据库，那么在网络分区过程中的数据就永久丢失了。这显然是无法容忍的。  </p>
 <p>为此，应当要求Master在Slave数量不足时，禁止读操作，作为一个折中的解决方案：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 当slaves数量不足时，禁止读操作</span></span><br><span class="line">min-slaves-to-write 1</span><br><span class="line"><span class="comment"># 当slave无回应超时超过这个时间时，认为其掉线</span></span><br><span class="line">min-slaves-max-lag 10</span><br></pre></td></tr></table></figure></p>
